@@ -21,9 +21,20 @@
 # RStudio files
 .Rproj.user/
 
-# produced vignettes
-vignettes/*.html
-vignettes/*.pdf
+# MCSim-generated code, created/used locally
+*.C
+*.c
+*.so
+*.dll
+*.md5
+*.o
+
+# produced images, plots and vignettes
+*.pdf
+*.tif
+*.tiff
+*.html
+*.svg
 
 # OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
 .httr-oauth
