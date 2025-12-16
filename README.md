@@ -19,7 +19,7 @@ This MCSim source code file defines the current model template.
 
 -------------------------
 Other .R scripts
-Most of the .R scripts contained in this package contain functions which in turn create plots or tables from either the original PBPK Model Template paper for PFAS PBPK models (Bernstein et al., 2021, (https://doi.org/10.1093/toxsci/kfab063) or the second PBPK Model Template paper extending the model to various volatilie orgranic compounds (VOCS) (Bernstein et al., 2023, https://doi.org/10.1093/toxsci/kfad021). The specific chemical (class) addressed by each script is indicated in the script name, with more details in the script comments.
+Most of the .R scripts contained in this package contain functions which in turn create plots or tables from either the original PBPK Model Template paper for PFAS PBPK models (Bernstein et al., 2021, (https://doi.org/10.1093/toxsci/kfab063) or the second PBPK Model Template paper extending the model to various volatilie orgranic compounds (VOCS) (Bernstein et al., 2023, https://doi.org/10.1093/toxsci/kfad021). The specific chemical (class) addressed by each script is indicated in the script name, with more details in the script comments. (Yoon_scripts.R has function to create table results to match those for several chemicals in the Yoon et al. (2007) paper, per the comments in this script.)
 
 plot_PFAS_template_man.R contains functions for plotting results for the PFAS simulations and does not need to be run directly.
 
