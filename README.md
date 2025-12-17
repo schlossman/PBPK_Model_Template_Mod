@@ -1,14 +1,14 @@
 # PBPK_Model_Template_Mod
 Version of the PBPK Model Template project created to work with the MCSimMod modeling package, Paul Schlosser, December, 2025.
 
-To use the included R functions, the R packages MCSimMod and readxl must be installed (with dependent packages). See Software_Installation_Instructions in the Documentation folder.
-
 Descriptive help files are provided in the "Documentation" folder. These are R-markdown (.Rmd) files that can "Knit"ed to create html or pdf versions for easier reading.
+
+To use the included R functions, the R packages MCSimMod and readxl must be installed (with dependent packages). For details, see Documentation/Software_Installation_Instructions.
 
 -------------------------
 run_template_model.R
 
-This R source code file includes functions to run the PBPK model template. See Documentation/How_To_Run_PBPK_Template for an overview and Documentation/PBPK_Template_Description_of_Functions for detailed help on use of the functions defined by this script.
+This R source code file includes functions to run the PBPK Model Template. An overview on use is provided in Documentation/How_To_Run_PBPK_Template and detailed help on use of the functions defined by this script is provided in Documentation/PBPK_Template_Description_of_Functions.
 
 **The current format for input parameter spreadsheets can be seen in:
 1. model parameters: BLANK_template_parameters_Model.xlsx
@@ -16,6 +16,7 @@ This R source code file includes functions to run the PBPK model template. See D
 
 -------------------------
 PBPK_template.model
+
 This MCSim source code file defines the current model template.
 
 -------------------------
