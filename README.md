@@ -1,9 +1,9 @@
 # PBPK_Model_Template_Mod
-Version of the PBPK Model Template project created to work with the "MCSimMod"" 
+Version of the PBPK Model Template project created to work with the "MCSimMod" 
 modeling package, Paul Schlosser, December, 2025.
 
 Descriptive help files are provided in the "Documentation" folder. These are 
-R-markdown (.Rmd) files that can "Knit"ed to create html or pdf versions for 
+R-markdown (.Rmd) files that can be "Knit"ed to create html or pdf versions for 
 easier reading.
 
 To use the included R functions, R libraries "MCSimMod" and "readxl" (and dependent 
