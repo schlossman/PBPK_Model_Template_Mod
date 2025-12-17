@@ -11,9 +11,7 @@ run_template_model.R
 This R source code file includes functions to run the PBPK model template. See Documentation/How_To_Run_PBPK_Template for an overview and Documentation/PBPK_Template_Description_of_Functions for detailed help on use of the functions defined by this script.
 
 **The current format for input parameter spreadsheets can be seen in:
-
 1. model parameters: BLANK_template_parameters_Model.xlsx
-
 1. exposure parameters: BLANK_template_parameters_Exposure.xlsx
 
 -------------------------
