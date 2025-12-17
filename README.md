@@ -52,4 +52,4 @@ Directory containing data files for each of the chemicals and example models. Th
 -------------------------
 Inputs
 
-Directory containing input data files for each chemical. To run the current model template there must be two input spreadsheets: one for parameters in the model, and one for parameters related to the exposure scenario. Note, the top of this file indicates an example file containing the current format for the input spreadsheets. Previously implemented chemical models may need to have their input spreadsheets modified in order to be compatible with the current version of the template.
+Directory containing input data files for each chemical. To run the current model template there must be two input spreadsheets: one for parameters in the model, and one for parameters related to the exposure scenario. The "BLANK_..." spreadsheets show the current format for the input spreadsheets. Previously implemented chemical models may need to have their input spreadsheets modified in order to be compatible with the current version of the template.
