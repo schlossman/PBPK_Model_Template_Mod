@@ -1,0 +1,121 @@
+---
+title: "Index of Directories and Files for the PBPK Model Template Package"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Driectories/Subdirectories
+
+#### Data
+
+Directory containing data files for each of the chemicals and example models. 
+Sub-directories named "Digitized_Data_X" or "Data_X" contain chemical-specific 
+data for chemical "X" from source publications in the form of .csv and .xlsx files.
+
+#### Inputs
+
+Directory containing input data files for each chemical. To run the current 
+model template there must be two input spreadsheets for each model: one for 
+model parameters and one for parameters related to the exposure scenario. The 
+"BLANK..." spreadsheets contain the current format for these inputs.
+
+#### Documentation
+
+Directory containing documentation and instructional files explaining how to use 
+the PBPK model template.
+
+### Master Files
+
+#### run_template_model.R
+
+R source code file with functions to run the PBPK model template. 
+See Software_Installation_Instructions for initial installation and 
+How_To_Run_PBPK_Template to get started.
+
+#### PBPK_template.model
+
+MCSim source code file defining the current model template.
+
+### Chemical-Specific Simulation files
+
+The following files run simulations that replicate results for various PBPK 
+models.  
+*All of these scripts require **run_template_model.R** to run*.
+
+#### CF_Corley_scripts.R
+
+R source code file with functions to recreate results for the Corley chloroform 
+experiments modeled by Sasso et. al. (2013). 
+
+#### CF_Take_scripts.R
+
+R source code file with functions to recreate results for the Take chloroform
+experiments modeled by Sasso et. al. (2013). 
+
+#### DCM_IRIS_scripts.R
+
+R source code file with functions that run simulations for dichloromethane 
+exposures using the U.S. EPA IRIS DCM model. 
+
+#### methanol_scripts.R
+
+R source code file with functions that run simulations for methanol exposures 
+using the U.S. EPA IRIS methanol model. 
+
+#### PFAS_manuscript_scripts.R
+
+R source code file with functions to recreate results in Bernstein et al. 
+(2021), updated to be compatible with this version of the model template. The
+script **plot_PFAS_template_man.R** is also required.
+
+#### plot_PFAS_template_man.R
+
+R source code file with functions to generate the plots from Bernstein et al. 
+(2021), used by **PFAS_manuscript_scripts.R**.
+
+#### Styrene_scripts.R
+
+R source code file with functions that run simulations for styrene exposures 
+using the Ramsey and Andersen (1984) model. 
+
+#### test.R
+
+An R script that runs a single methanol simulation to demonstrate small scale 
+numerical noise from the ODE solver that appears when the term for endogenous 
+chemical production and corresponding non-zero initial conditions are used. 
+This is an unresolved issue but the scale of the numerical noise should not 
+significantly impact model results.
+
+#### Yoon_scripts.R
+
+R source code file with functions that run simulations for VOC exposures using 
+the Yoon et al. (2007) PBPK model for VOCs, including vinyl chloride (VC), 
+trichloroethylene (TCE), and carbon tetrachloride (CCl~4~).
+
+### Typically hidden files
+
+The current MCSimMod function calls create the following files in a temporary 
+directory but can be found with a search. Model creation and building can be run 
+such that they appear in the main project directory (see MCSimMod documentation). 
+
+#### PBPK_template_model.c
+
+C source code file defining the PBPK Model Template.
+
+#### PBPK_template_model.dll
+
+DLL file defining the PBPK Model Template that are be used by functions in the R
+package "deSolve".
+
+#### PBPK_template_model.o
+
+C object code file defining the PBPK Model Template .
+
+#### PBPK_template_model_inits.R
+
+R source code file defining initialization functions for the PBPK Model Template.
+
+
