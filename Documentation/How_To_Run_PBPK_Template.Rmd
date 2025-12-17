@@ -28,22 +28,22 @@ These instructions allow you to run the simulations given in the included script
 
 These instructions allow you to run simulations using your own scripts.
 
-1.	Install R, RStudio, the R packages "deSolve" and "readxl", Rtools, and GNU MCSim on your system. Instructions can be found in "R_and_MCSim_installation_instructions.html".
+1.	Install R, Rtools, RStudio (optional but suggested), and the R packages "MCSimMod" and "readxl" (with dependent packages) on your system. Detailed instructions can be found in "Software_Installation_Instructions".
 
-1.	Open RStudio.
+1.	Open RStudio or R.
 
-1.  Open "run_template_model.R", set your working directory to the directory containing this file, and "Source" the file to load the included functions.
-
-1.  If this is the first time using the template model, compile the template model by using the command `PBPK_compile()`.
+1.  Open "run_template_model.R" and "Source" the file to load the included functions. This should also set your working directory to the directory containing this file which is required for the functions to work.
 
 1.  Create input spreadsheets for your desired PBPK model simulation using copies of the provided blank templates. These can be found in the "Inputs" folder and are titled "BLANK_template_parameters_Model.xlsx" and "BLANK_template_parameters_Exposure.xlsx". 
 
+1.  *Store these input spreadsheets in the "Inputs" folder!*
+
 1.  Run the desired simulation by calling the function PBPK_run:
-`PBPK_run(`
+` [Your output dataframe] <- PBPK_run(`
 ` model.param.filename = "[Your model parameters spreadsheet filename]",`
 ` model.param.sheetname = "[Your model parameters spreadsheet sheetname]",`
 ` exposure.param.filename = "[Your exposure parameters spreadsheet sheetname]",`
-`exposure.param.sheetname = "[Your exposure parameters spreadsheet sheetname]")`
+` exposure.param.sheetname = "[Your exposure parameters spreadsheet sheetname]")`
 
 1.  Output is provided in a data frame containing time-course data for all state and output variables included in the PBPK model template, and units are given in (mg, L, h).
 
