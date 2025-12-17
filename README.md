@@ -34,19 +34,19 @@ Other .R scripts
 
 Most of the .R scripts contained in this package contain functions which in turn create plots or tables from either the original PBPK Model Template paper for PFAS PBPK models (Bernstein et al., 2021, (https://doi.org/10.1093/toxsci/kfab063) or the second PBPK Model Template paper extending the model to various volatilie orgranic compounds (VOCS) (Bernstein et al., 2023, https://doi.org/10.1093/toxsci/kfad021). The specific chemical (class) addressed by each script is indicated in the script name, with more details in the script comments. (Yoon_scripts.R has function to create table results to match those for several chemicals in the Yoon et al. (2007) paper, per the comments in this script.)
 
-test.R runs a single simulation to demonstrate very small scale numerical instability that occurs with some simulations, not yet resolved.
+test.R runs a single simulation to demonstrate very small scale numerical instability that occurs with some simulations, not yet resolved but the scale of the noise should not significantly impact model results.
 
 
 -------------------------
 Documentation
 
-This is a directory containing documentation on installation and use of the PBPK Model Template package.
+Directory containing documentation on installation and use of the PBPK Model Template package.
 
 
 -------------------------
 Data
 
-Directory containing data files for each of the chemicals and example models. The directory contains sub-folders for each chemical named "Digitized_Data_X" where X is the name of the chemical. The sub-folders contain .csv and .xlsx files containing data digitized from the source publications.
+Directory containing data files for each of the chemicals and example models. The directory contains sub-folders for each chemical named "Digitized_Data_X" where "X" is the name of the chemical. The sub-folders contain .csv and .xlsx files containing data digitized from the source publications.
 
 
 -------------------------
