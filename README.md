@@ -1,17 +1,18 @@
 # PBPK_Model_Template_Mod
 Version of the PBPK Model Template project created to work with the MCSimMod modeling package, Paul Schlosser, December, 2025.
 
-**The current format for input parameter spreadsheets can be seen in:
-model parameters: BLANK_template_parameters_Model.xlsx
-exposure parameters: BLANK_template_parameters_Exposure.xlsx
-
-
 To use the included R functions, the R packages MCSimMod and readxl must be installed (with dependent packages). See Software_Installation_Instructions in the Documentation folder.
 
 -------------------------
 run_template_model.R
 
-This R source code file includes functions to run the PBPK model template. The included functions are described in Documentation/PBPK_Template_Description_of_Functions. See Documentation/How_To_Run_PBPK_Template for further details and Documentation/PBPK_Template_Description_of_Functions for help on use of the functions defined by this script.
+This R source code file includes functions to run the PBPK model template. See Documentation/How_To_Run_PBPK_Template for an overview and Documentation/PBPK_Template_Description_of_Functions for detailed help on use of the functions defined by this script.
+
+**The current format for input parameter spreadsheets can be seen in:
+
+model parameters: BLANK_template_parameters_Model.xlsx
+
+exposure parameters: BLANK_template_parameters_Exposure.xlsx
 
 -------------------------
 PBPK_template.model
