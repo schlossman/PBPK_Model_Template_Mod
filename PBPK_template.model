@@ -126,8 +126,6 @@ Outputs = {A_bal,     # Mass balance (mg)
            C_inh,     # ... inhaled air (mg/L)
            C_ven,     # ... venous blood (mg/L)
            C_pulv,    # ... gas exchange region of lungs (pulmonary vein) (mg/L)
-           C_art_in,  # ... blood entering the arterial compartment (mg/L)
-           C_art_comp, # ... arterial blood (when there are separate venous and arterial blood terms) (mg/L)
            C_art,     # ... arterial blood (mg/L)
            BW_out,    # Body weight (kg)
            Free,      # Free fraction of chemical in blood
@@ -610,7 +608,7 @@ Dynamics {
                  : (exist_lung ? (q_ar*R_ven_in + Q_cbnd*Free*C_lu/P_lu)
                                    / (q_ar*Ven_loss_c - Q_cbnd*(1-Free)) # With lung compartment
                       : (q_ar*Q_den*R_ven_in +  Q_cbnd*Free*Q_inh) 
-                / ( q_ar*Q_den*Ven_loss_c - Q_cbnd*(Q_den - Free*Q_P/P_B) ) # No lung
+                / ( q_ar*Q_den*Ven_loss_c - Q_cbnd*(Q_den - Free*Q_p/P_B) ) # No lung
                       ) # End of case for C_art = 0
                  );
     C_ven = (venous_ss ? C_ven_ss : A_ven/V_ven); 

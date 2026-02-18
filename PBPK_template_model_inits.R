@@ -1,4 +1,4 @@
-initParms <- function(newParms = NULL) {
+initParms_PBPK_template <- function(newParms = NULL) {
   parms <- c(
     MOLWT = 0.0,
     RTemp = 24450.0,
@@ -112,14 +112,14 @@ initParms <- function(newParms = NULL) {
 
   parms <- within(as.list(parms), {
   })
-  out <- .C("getParms",  as.double(parms),
+  out <- .C("getParms_PBPK_template",  as.double(parms),
             out=double(length(parms)),
             as.integer(length(parms)))$out
   names(out) <- names(parms)
   out
 }
 
-Outputs <- c(
+Outputs_PBPK_template <- c(
     "A_bal",
     "A_body",
     "A_out",
@@ -141,8 +141,6 @@ Outputs <- c(
     "C_inh",
     "C_ven",
     "C_pulv",
-    "C_art_in",
-    "C_art_comp",
     "C_art",
     "BW_out",
     "Free",
@@ -227,7 +225,7 @@ Outputs <- c(
     "total_volume_frac"
 )
 
-initStates <- function(parms, newStates = NULL) {
+initStates_PBPK_template <- function(parms, newStates = NULL) {
   Y <- c(
     A_bl = 0.0,
     A_ven = 0.0,
@@ -353,6 +351,6 @@ initStates <- function(parms, newStates = NULL) {
     Y[names(newStates)] <- newStates
   }
 
-.C("initState", as.double(Y));
+.C("initState_PBPK_template", as.double(Y));
 Y
 }
