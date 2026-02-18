@@ -33,9 +33,15 @@ setwd(script.dir)
 # language with file name "PBPK_template.model", and a function to run it as
 # a PBPK Model Template, using the MCSimMod package by Dustin Kapraun.
 
-model <- template <- createModel("PBPK_template") 
-model$loadModel()
-template$loadModel()
+template <- createModel("PBPK_template", writeTemp=FALSE) 
+  # As of 1/21/2026, the $loadModel function created by MCSimMod fails to
+  # recognize when the .model file has changed *if the model object ("template"
+  # in  this case) is created with writeTemp=TRUE (default)*, even though it
+  # creates a 'hash' file in the temporary directory. However, it *does*
+  # recognize changes in the .model file and re-compiles the model as it should
+  # when the model object is created with writeTemp=FALSE. This makes for more
+  # clutter in the project directory but assures revisions are incorporated.
+template$loadModel() 
 
 update_vals <- function(p, np, stopifwarned=TRUE){
   # Function expecting two named lists, p (existing parameter/values), np (new 
@@ -52,6 +58,50 @@ update_vals <- function(p, np, stopifwarned=TRUE){
   }
   if (stopifwarned & any(!names(np)%in%names(p))) {stop()}
   return(p)
+}
+
+univ_blood <- function(model=template, species="human"){
+  # Creates a vector of alternate PBPK Template parameters that can be passed 
+  # to PBPK_run() so that the model now runs with a lung tissue compartment and
+  # both venous and arterial blood compartments solved as ODEs, not by steady-
+  # state assumption.
+  return(within(c(as.list(model$parms),species=stringr::str_to_lower(species)), {
+    if (!species%in%c("rat","mouse","human")) {
+      warning(paste0("Input species must 'rat', 'mouse', or 'human' (doube-quoted)."))
+      stop()
+    }
+    V_blc_def = list(mouse=0.049, rat=0.074, human=0.079) # Brown et al. (1997), Table 21
+    V_luc_def = list(mouse=0.0073, rat=0.005, human=0.0076) # Brown et al. (1997), Tables 4, 5 & 7
+    p = c(single_blood=0, venous_ss=0, arterial_ss=0, exist_lung=1)
+    V_rbcs = V_rbc # Save current value
+    if ((V_artc==1) & (V_venc==1)) { # Both blood volumes = default
+      if (V_blc==1) { # Default value, not realistic
+        V_blc=V_blc_def[[species]] # Set to species default
+        if (V_rbc > V_blc) V_rbc = V_rbc - V_blc # Subtract from rest of body
+      }
+      p = c(p, V_artc=0.25*V_blc, V_venc=0.75*V_blc)
+      # Assumes these are 75%/25% of total (Brown et al., 1997).
+    } else { # At least one of ven & art is *not* default. The next 2 lines
+      # again assume 75%/25% = 3/1 ratio of V_venc to V_artc so that if either
+      # V_x = 1, it can be set using this assumption and the volume of the other.
+      if (V_venc==1) {
+        p = c(p, V_venc=3*V_artc) 
+        if (V_rbc > p[["V_venc"]]) V_rbc = V_rbc - p[["V_venc"]]
+      }
+      if (V_artc==1) {
+        p = c(p, V_artc=V_venc/3)
+        if (V_rbc > p[["V_artc"]]) V_rbc = V_rbc - p[["V_artc"]]
+      }
+    }
+    if (V_luc==1) { # Default value. Assume P_lu also not set
+       p = c(p, V_luc=V_luc_def[[species]])
+       if (V_rbc > p[["V_luc"]]) V_rbc = V_rbc - p[["V_luc"]]
+       p = c(p, P_lu=P_li) # Set PC to liver value as default, but...
+       if (V_kic!=1) p["P_lu"] = P_ki # Use kidney value if it is not default
+      
+    }
+    if (V_rbc < V_rbcs) p = c(p, V_rbc=V_rbc)
+  })$p)
 }
 
 PBPK_run <- function(model=template, load=TRUE, 
