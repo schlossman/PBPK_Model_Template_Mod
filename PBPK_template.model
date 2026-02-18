@@ -252,7 +252,7 @@ venous_ss = 1.0;       # Switch to have venous blood concentration approximated
 arterial_ss = 1.0;     # Switch to have arterial blood concentration 
                        #   approximated as either steady-state (if non-zero)
                        #   or dynamic (if zero)
-exist_lung = 1.0;      # Switch to have lung exist as separate compartment 
+exist_lung = 0.0;      # Switch to have lung exist as separate compartment 
                        #   for inhalation model (if non-zero)
 GE_ss = 1.0;           # Switch to have gas exchange region computed using a
                        #   steady state approximation (if non-zero) or fully
@@ -526,6 +526,7 @@ Dynamics {
     
     # Concentrations in tissue compartments that do not depend on cardiac output.
     C_bl = A_bl / V_bl;
+    C_art = A_art / V_art; # Will be replaced below if artererial_ss or single_blood
     C_lu = A_lu / V_lu;
     C_gi = A_gi / V_gi;
     C_li = A_li / V_li;
@@ -555,6 +556,18 @@ Dynamics {
     Q_om = Q_omc*Q_cardiac;
     Q_rb = Q_rbc*Q_cardiac;
     
+    # Flow rates out of tissues
+    R_Qgi_out = Free*Q_gi*C_gi/P_gi;
+    R_Qli_out = Free*(Q_li+Q_gi)*C_li/P_li;
+    R_Qki_out = Free*Q_ki*C_ki/P_ki;
+    R_Qtc1_out = Free*Q_tc1*C_tc1/P_tc1;
+    R_Qtc2_out = Free*Q_tc2*C_tc2/P_tc2;
+    R_Qtc3_out = Free*Q_tc3*C_tc3/P_tc3;
+    R_Qtc4_out = Free*Q_tc4*C_tc4/P_tc4;
+    R_Qtc5_out = Free*Q_tc5*C_tc5/P_tc5;
+    R_Qom_out = Free*Q_om*C_om/P_om;
+    R_Qrb_out = Free*Q_rb*C_rb/P_rb;
+
     # Compute rate constants that scale with cardiac output
     k_GFR = k_GFRc*Q_cardiac;
     
@@ -568,109 +581,65 @@ Dynamics {
     # Concentration in inhaled air (mg/L). This is equal to C_ch (concentration
     # in the chamber, mg/L) for a closed chamber experiment, and is otherwise
     # Conc * GASD (concentration in ambient air, mg/L).
-    C_inh = (V_ch ? C_ch : Conc * GASD);
+    C_inh = (V_ch ? C_ch : Conc*GASD);
     
-    #  **See the document "Free_bound_distribution_eqns.pdf" for an explanation of how the steady state approximations for concentrations in blood and gas exchange regions are derived.
+    #  **See the document "Free_bound_distribution_eqns.pdf" for an explanation
+    # of how the ollowing steady state approximations for concentrations in
+    # blood and the gas exchange region are derived.
     
-    # Concentration in venous blood
-    # "C_ven" represents the concentration in venous blood. When the Boolean
-    # variable "venous_ss" is TRUE (so that a steady-state approximation is used
-    # for the venous blood concentration), we set the value of
-    # "C_ven" to the value calculated for "C_ven_ss" as shown below. (Note
-    # that there are three possible formulas for "C_ven_ss" depending on the
-    # value of the Boolean variables "exist_lung" and "GE_ss". Further
-    # explanation of the expressions for "C_ven_ss" is provided in the document
-    # "Free_bound_distribution_eqns.pdf".)
-    # When "venous_ss" is FALSE, the value of "C_ven" is calculated based on the
-    # value of A_ven as shown.
+    # Concentration in venous blood (C_ven)
+    # When "venous_ss" = 1 (TRUE), the steady-state approximation is used and
+    # C_ven is set to "C_ven_ss", calculated below. Otherwise C_ven = A_ven/V_ven. 
+    # There are three possible formulas for "C_ven_ss" depending on whether
+    # C_art > 0 (calculated above when "arterial_ss" is FALSE) or if C_art = 0,
+    # in which case the value of C_ven_ss depends on the Boolean "exist_lung".
 
-    R_ven_in = Free*((Q_li+Q_gi)*C_li/P_li + Q_ki*C_ki/P_ki + Q_tc1*C_tc1/P_tc1 
-        + Q_tc2*C_tc2/P_tc2 + Q_tc3*C_tc3/P_tc3 + Q_tc4*C_tc4/P_tc4 
-        + Q_tc5*C_tc5/P_tc5 + Q_om*C_om/P_om + Q_rb*C_rb/P_rb) + R_IV;
-    Ven_loss_c = k_ven_ust*V_ven + k_loss; # Direct losses from venous blood
-    C_ven_ss_lung = (GE_ss ? ( (Q_cardiac + Free*k_GFR)*(Q_cardiac*Free 
-        + Q_p/P_B)*R_ven_in + (Q_cardiac*(1-Free)*(Q_cardiac*Free 
-        + Q_p/P_B)*Q_cardiac*Free*C_lu)/P_lu ) / ( (Q_cardiac 
-        + Ven_loss_c)*(Q_cardiac*Free + Q_p/P_B)*(Q_cardiac + Free*k_GFR) 
-        - (Q_cardiac*Free + Q_p/P_B)*pow(Q_cardiac*(1-Free),2) ) 
-      : ( (Q_cardiac + Free*k_GFR)*R_ven_in 
-        + (Q_cardiac*(1-Free)*Q_cardiac*Free*C_lu)/P_lu ) / ( (Q_cardiac 
-        + Ven_loss_c)*(Q_cardiac + Free*k_GFR) - pow(Q_cardiac*(1-Free),2) ) );
-    C_ven_ss = (exist_lung ? C_ven_ss_lung : ( (Q_cardiac 
-        + Free*k_GFR)*(Q_cardiac*Free + Q_p/P_B)*R_ven_in 
-        + Q_cardiac*Free*Q_cardiac*(1-Free)*(Q_p*F_inh*C_inh) ) / 
-        ( (Q_cardiac + Ven_loss_c)*(Q_cardiac*Free + Q_p/P_B)*(Q_cardiac 
-        + Free*k_GFR) - Q_cardiac*(1-Free)*pow(Q_cardiac*Free,2) 
-        - (Q_cardiac*Free + Q_p/P_B)*pow(Q_cardiac*(1-Free),2) ) );
-    C_ven = (venous_ss ? C_ven_ss : A_ven/V_ven);
+    # The following internal variables simplify subsequent calculations:
+    R_ven_in = R_Qli_out + R_Qki_out + R_Qtc1_out + R_Qtc2_out + R_Qtc3_out 
+        + R_Qtc4_out + R_Qtc5_out + R_Qom_out + R_Qrb_out + R_IV;
+    Ven_loss_c = Q_cardiac + k_ven_ust*V_ven + k_loss; # Loss rate constant for venous blood
+    Q_inh = Q_p*F_inh*C_inh;  # Mass rate of inhalation
+    Q_atot = (Q_cardiac + Free*k_GFR); # Effective total flow out of the
+                  # arterial blood compartment, including glomerular filtration
+    q_ar = 1 + Free*k_GFR/Q_cardiac; # = Q_atot/Q_cardiac
+    Q_den = Q_cardiac*Free + Q_p/P_B; # Denominator from GE calculations
+    Q_cbnd = Q_cardiac*(1-Free); # Cardiac output carrying bound chemical
     
-    # "C_pulv" represents the concentration in blood in the "gas exchange"
-    # region of the lungs (i.e., in the pulmonary vein). When the Boolean
-    # variable "GE_ss" is TRUE (so that a steady-state approximation is used for
-    # quantities related to the gas exchange region), we set the value of
-    # "C_pulv" to the value calculated for "C_pulv_ss" as shown below. (Note
-    # that there are two possible formulas for "C_pulv_ss" depending on the
-    # value of the Boolean variable "exist_lung". Further explanation of the
-    # expressions for "C_pulv_ss" is provided in the document
-    # "Free_bound_distribution_eqns.pdf".)
-    # When "GE_ss" is FALSE, the value of "C_pulv" is set to zero.
+    C_ven_ss = (C_art ? (R_ven_in + Q_cbnd*C_art)/Ven_loss_c # When C_art > 0
+                 # When C_art = 0 (arterial_ss [or single_blood] TRUE) ...
+                 : (exist_lung ? (q_ar*R_ven_in + Q_cbnd*Free*C_lu/P_lu)
+                                   / (q_ar*Ven_loss_c - Q_cbnd*(1-Free)) # With lung compartment
+                      : (q_ar*Q_den*R_ven_in +  Q_cbnd*Free*Q_inh) 
+                / ( q_ar*Q_den*Ven_loss_c - Q_cbnd*(Q_den - Free*Q_P/P_B) ) # No lung
+                      ) # End of case for C_art = 0
+                 );
+    C_ven = (venous_ss ? C_ven_ss : A_ven/V_ven); 
+    
+    # "C_pulv" represents the concentration in blood exiting the "gas exchange"
+    # region of the lungs (i.e., in the pulmonary vein). C_pulv is calculated
+    # using the standard gas-exchange formula, assuming steady-state in the gas
+    # exchange region (i.e., when "GE_ss" is TRUE), with C_ven calculated above.
+    # When "GE_ss" is FALSE, "exist_lung" must be TRUE, and "C_pulv" is not used.
 
-    C_pulv_ss = (exist_lung ? ( (Q_cardiac + Free*k_GFR)*(Q_cardiac 
-        + Ven_loss_c)*(Q_p*F_inh*C_inh) 
-        + (Q_cardiac*(1-Free)*Q_cardiac*Free*Q_cardiac*Free*C_lu)/P_lu 
-        + (Q_cardiac + Free*k_GFR)*Q_cardiac*Free*R_ven_in 
-        - (Q_p*F_inh*C_inh)*pow(Q_cardiac*(1-Free),2) ) / ( (Q_cardiac 
-        + Ven_loss_c)*(Q_cardiac*Free + Q_p/P_B)*(Q_cardiac + Free*k_GFR) 
-        - (Q_cardiac*Free + Q_p/P_B)*pow(Q_cardiac*(1-Free),2) ) 
-      : ( (Q_cardiac + Free*k_GFR)*(Q_cardiac 
-        + Ven_loss_c)*(Q_p*F_inh*C_inh) + (Q_cardiac 
-        + Free*k_GFR)*Q_cardiac*Free*R_ven_in 
-        - (Q_p*F_inh*C_inh)*pow(Q_cardiac*(1-Free),2) ) / ( (Q_cardiac 
-        + Ven_loss_c)*(Q_cardiac*Free + Q_p/P_B)*(Q_cardiac 
-        + Free*k_GFR) - Q_cardiac*(1-Free)*pow(Q_cardiac*Free,2) 
-        - (Q_cardiac*Free + Q_p/P_B)*pow(Q_cardiac*(1-Free),2) ) );
-    C_pulv = (GE_ss ? C_pulv_ss : 0.0);
+    C_pulv = (Q_cardiac*Free*C_ven + Q_inh)/Q_den;
           
     # Concentrations related to arterial blood
-    # "C_art_in" is used in the ODE for A_art to represent the concentration
-    # entering the arterial blood compartment based on the value of the Boolean
-    # variable "exist_lung" (which informs whether the lung tissue compartment
-    # is explicitly included).
-    C_art_in = (exist_lung ? C_lu/P_lu : C_pulv);
+    # "R_art_in" is used in the ODE for A_art or the steady-state solution for 
+    # C_art to represent the rate entering the arterial blood compartment based
+    # on the value of the Boolean variable "exist_lung" (which informs whether
+    # the lung tissue compartment is explicitly included).
+    
+    R_art_in = Q_cardiac*Free*(exist_lung ? C_lu/P_lu : C_pulv) + Q_cbnd*C_ven ;
     
     # "C_art" represents the concentration in blood entering other tissue
-    # compartments. When the Boolean variable "single_blood" is TRUE (so that
-    # one blood compartment is used in the model), the value of "C_art" is
-    # calculated based on the value of A_bl as shown. If "single_blood" is 
-    # FALSE, "C_art" is set to the value of "C_art_comp" (i.e., the value of
-    # "C_art" when using an arterial blood compartment).
-    # When the Boolean variable "arterial_ss" is TRUE (so that a steady-state
-    # approximation is used for the arterial blood concentration), we set the
-    # value of "C_art_comp" to the value calculated for "C_art_ss" as shown
-    # below. (Note that there are three possible formulas for "C_art_ss"
-    # depending on the value of the Boolean variables "exist_lung" and "GE_ss".
-    # Further explanation of the expressions for "C_art_ss" is provided in the
-    # document "Free_bound_distribution_eqns.pdf".)
-    # When "arterial_ss" is FALSE, the value of "C_art_comp" is calculated based
-    # on the value of A_art as shown.
+    # compartments. When the Boolean "single_blood" is TRUE (only one blood
+    # compartment is used in the model), then C_art = C_bl.
+    # If "single_blood" is FALSE, and "arterial_ss" = TRUE, C_art is set to its
+    # steady-state value using R_art_in defined just above.
+    # If both "single_blood" and "arterial_ss" are FALSE, C_art = A_art/V_art, 
+    # with A_art being the solution of the ODE for arterial blood.
 
-    C_art_ss_lung = (GE_ss ? ( ( (Q_cardiac + Ven_loss_c)*(Q_cardiac*Free 
-        + Q_p/P_B)*Q_cardiac*Free*C_lu )/P_lu 
-        + Q_cardiac*(1-Free)*(Q_cardiac*Free+Q_p/P_B)*R_ven_in ) / ( (Q_cardiac 
-        + Ven_loss_c)*(Q_cardiac*Free + Q_p/P_B)*(Q_cardiac + Free*k_GFR) 
-        - (Q_cardiac*Free + Q_p/P_B)*pow(Q_cardiac*(1-Free),2) ) 
-      : ( ((Q_cardiac + Ven_loss_c)*Q_cardiac*Free*C_lu)/P_lu 
-        + Q_cardiac*(1-Free)*R_ven_in ) / ( (Q_cardiac 
-        + Ven_loss_c)*(Q_cardiac + Free*k_GFR) - pow(Q_cardiac*(1-Free),2) ) );
-    C_art_ss = (exist_lung ? C_art_ss_lung : ( Q_cardiac*Free*(Q_cardiac 
-        + Ven_loss_c)*(Q_p*F_inh*C_inh) + R_ven_in*pow(Q_cardiac*Free,2) 
-        + Q_cardiac*(1-Free)*(Q_cardiac*Free + Q_p/P_B)*R_ven_in ) / ( (Q_cardiac 
-        + Ven_loss_c)*(Q_cardiac*Free + Q_p/P_B)*(Q_cardiac + Free*k_GFR) 
-        - Q_cardiac*(1-Free)*pow(Q_cardiac*Free,2) - (Q_cardiac*Free 
-        + Q_p/P_B)*pow(Q_cardiac*(1-Free),2) ) );
-    C_art_comp = (arterial_ss ? C_art_ss : A_art/V_art);
-    C_art = (single_blood ? A_bl / V_bl : C_art_comp);
-    
+    C_art = (single_blood ? C_bl : (arterial_ss ? R_art_in/Q_atot : C_art) );
 
     # Rates (mg/h)
     
@@ -716,36 +685,17 @@ Dynamics {
     R_exh = Q_p*(GE_ss ? C_pulv : C_lu/P_lu)/P_B; #Rate chemical is exhaled
     R_ch_loss = KL*A_ch; #Rate chemical is lost from the chamber
     
-    # Blood flow rates
+    # Mass flows to tissues (when singe_bood is TRUE, C_art = C_bl above)
     R_Qgi_in = Free*Q_gi*C_art;
-    R_Qgi_out = Free*Q_gi*C_gi/P_gi;
-    
     R_Qli_in = Free*Q_li*C_art;
-    R_Qli_out = Free*(Q_li+Q_gi)*C_li/P_li;
-    
     R_Qki_in = Free*Q_ki*C_art;
-    R_Qki_out = Free*Q_ki*C_ki/P_ki;
-    
     R_Qtc1_in = Free*Q_tc1*C_art;
-    R_Qtc1_out = Free*Q_tc1*C_tc1/P_tc1;
-
     R_Qtc2_in = Free*Q_tc2*C_art;
-    R_Qtc2_out = Free*Q_tc2*C_tc2/P_tc2;
-
     R_Qtc3_in = Free*Q_tc3*C_art;
-    R_Qtc3_out = Free*Q_tc3*C_tc3/P_tc3;
-
     R_Qtc4_in = Free*Q_tc4*C_art;
-    R_Qtc4_out = Free*Q_tc4*C_tc4/P_tc4;
-
     R_Qtc5_in = Free*Q_tc5*C_art;
-    R_Qtc5_out = Free*Q_tc5*C_tc5/P_tc5;
-    
     R_Qom_in = Free*Q_om*C_art;
-    R_Qom_out = Free*Q_om*C_om/P_om;
-
     R_Qrb_in = Free*Q_rb*C_art;
-    R_Qrb_out = Free*Q_rb*C_rb/P_rb;
 
     # Mass balance.
     A_body = A_glumen + A_bl + A_ven + A_art + A_lu + A_gi + A_li + A_ki + A_fil
@@ -768,7 +718,7 @@ Dynamics {
     # Total volume check.
     # Set compartment volumes as fraction of total body volume
     V_total_bl_value = ( single_blood ? V_bl : ( (1-venous_ss)*V_ven + (1-arterial_ss)*V_art) );
-    V_lu_value = (exist_lung ? V_lu : 0);
+    V_lu_value = (exist_lung ? V_lu : 0);   
     V_ki_value = (Q_kic ? V_ki : 0);
     V_fil_value = (k_GFR ? V_fil : 0);
     V_li_value = (Q_lic ? V_li : 0); 
@@ -781,31 +731,27 @@ Dynamics {
     V_om_value = (Q_omc ? V_om : 0);
     V_rb_value = (Q_rbc ? V_rb : 0);
     
-    total_volume_frac = (V_total_bl_value + V_lu_value
-        + V_ki_value + V_fil_value + V_li_value + V_gi_value + V_tc1_value
-        + V_tc2_value + V_tc3_value + V_tc4_value + V_tc5_value + V_om_value 
-        + V_rb_value)/BW_out;
+    total_volume_frac = (V_total_bl_value + V_lu_value + V_ki_value + V_fil_value
+        + V_li_value + V_gi_value + V_tc1_value + V_tc2_value + V_tc3_value
+        + V_tc4_value + V_tc5_value + V_om_value + V_rb_value)/BW_out;
         
     
     # Time rates of change of amounts (ODEs).
     
     # Blood - single compartment
-    dt(A_bl) = (single_blood ? R_Qli_out + R_Qki_out + R_Qtc1_out + R_Qtc2_out 
-        + R_Qtc3_out + R_Qtc4_out + R_Qtc5_out + R_Qom_out + R_Qrb_out 
-        - R_Qli_in - R_Qki_in - R_Qgi_in - R_Qtc1_in - R_Qtc2_in - R_Qtc3_in 
-        - R_Qtc4_in - R_Qtc5_in - R_Qom_in - R_Qrb_in - R_artfil + R_IV 
-        - R_venust - R_blloss : 0.0);
+    dt(A_bl) = (single_blood ? R_ven_in - R_Qli_in - R_Qki_in - R_Qgi_in
+        - R_Qtc1_in  - R_Qtc2_in - R_Qtc3_in - R_Qtc4_in - R_Qtc5_in 
+        - R_Qom_in - R_Qrb_in - R_artfil - R_venust - R_blloss : 0.0);
     dt(AUC_bl) = C_bl;
     dt(A_loss) = R_blloss;
 
     # Venous blood
-    dt(A_ven) = (1-single_blood)*(venous_ss ? 0.0 : R_Qli_out + R_Qki_out + R_Qtc1_out 
-        + R_Qtc2_out + R_Qtc3_out + R_Qtc4_out + R_Qtc5_out + R_Qom_out 
-        + R_Qrb_out + R_IV + Q_cardiac*(1-Free)*C_art - Q_cardiac*C_ven - R_venust - R_blloss);
+    dt(A_ven) = (single_blood ? 0 : (venous_ss ? 0 : 
+                                  R_ven_in + Q_cbnd*C_art - Ven_loss_c*C_ven));
     dt(AUC_ven) = C_ven;
     
     # Arterial blood (Arteries leaving the lungs)
-    dt(A_art) = (1-single_blood)*(arterial_ss ? 0.0 : Q_cardiac*Free*C_art_in + Q_cardiac*(1-Free)*C_ven - Q_cardiac*C_art - R_artfil);
+    dt(A_art) = (single_blood ? 0 : (arterial_ss ? 0 : R_art_in - Q_atot*C_art));
     dt(AUC_art) = C_art;
     
     # Ambient air concentration
@@ -821,16 +767,17 @@ Dynamics {
     dt(A_exh) = R_exh;
     
     # Amount in lung tissue (mg/h).
-    dt(A_lu) = exist_lung*( ( GE_ss ? Q_cardiac * Free*(C_pulv - C_lu/P_lu) : R_inh - R_exh + Q_cardiac * Free*(C_ven - C_lu/P_lu) ) - R_met_sat_lu - R_met_1st_lu );
+    dt(A_lu) = exist_lung*( ( GE_ss ? Q_cardiac*Free*(C_pulv - C_lu/P_lu) 
+                                : R_inh - R_exh + Q_cardiac*Free*(C_ven - C_lu/P_lu) )
+                                        - R_met_sat_lu - R_met_1st_lu );
     dt(AUC_lu) = C_lu;
     
     # Liver and GI tract
     dt(A_glumen) = R_oral - R_glgi - R_glli - R_glfst;
     dt(A_gi) = R_Qgi_in - R_Qgi_out - R_gifst + R_glgi - R_gili;
     dt(AUC_gi) = C_gi;
-    dt(A_li) = R_Qli_in + R_Qgi_out - R_Qli_out
-        - R_biliary + R_glli + R_gili + R_0bgli - R_met_sat_li - R_met_1st_li
-        - R_libind + R_liunbind;
+    dt(A_li) = R_Qli_in + R_Qgi_out - R_Qli_out - R_biliary + R_glli + R_gili
+        + R_0bgli - R_met_sat_li - R_met_1st_li - R_libind + R_liunbind;
     dt(AUC_li) = C_li;
     dt(A_fst) = R_biliary + R_glfst + R_gifst - R_feces;
     dt(A_fecal) = R_feces;
