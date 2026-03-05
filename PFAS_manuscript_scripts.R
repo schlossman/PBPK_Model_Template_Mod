@@ -19,7 +19,7 @@ old.par <- par(no.readonly = TRUE)
 source("run_template_model.R")
 source("plot_PFAS_template_man.R")
 
-PFHxS.Kim.FemaleRat <- function(img.name = NULL){
+PFHxS.Kim.FemaleRat <- function(img.name = NULL, alts = NULL, test_univ=FALSE){
   # Figure 3: Kim 2018, Female rat, 4 mg/kg PFHxS
   # As of Dec 8, 2025, the model version with published flow (error in liver
   # blood flow) is not enabled, code commented out, and the corresponding 
@@ -29,10 +29,17 @@ PFHxS.Kim.FemaleRat <- function(img.name = NULL){
                   model.param.sheetname = "FKimRecreateBW", 
                   exposure.param.filename = "PFHxS_template_parameters_Exposure.xlsx", 
                   exposure.param.sheetname = "FKimRecreateBW")
-
-  #out.inc <- PBPK_run(param.filename = "PFAS_template_parameters_PFHxS.xlsx", 
+  
+  if (!test_univ) { out2 = NULL } else {
+    out2 <- PBPK_run(model.param.filename = "PFHxS_template_parameters_Model.xlsx", 
+                     model.param.sheetname = "FKimRecreateBW_univ", 
+                     exposure.param.filename = "PFHxS_template_parameters_Exposure.xlsx", 
+                     exposure.param.sheetname = "FKimRecreateBW")
+  }
+  
+  #out2 <- PBPK_run(param.filename = "PFAS_template_parameters_PFHxS.xlsx", 
   #                    sheetname = "FKimRecreateBW", mName = "PFAS_template_GI")
-  plot.Kim(out, out.inc=NULL, chem="PFHxS", sex="female", dose=4.0, img.name=img.name, 
+  plot.Kim(out, out.inc=out2, chem="PFHxS", sex="female", dose=4.0, img.name=img.name, 
            Pylims=list(plasma=c(0.1,1e5),liver=c(15,30000),kidney=c(1e-4,2e4),urine=c(0,440)))
   
   print.noquote(paste("Maximum mass balance error (Template version with Corrected Flow):",
