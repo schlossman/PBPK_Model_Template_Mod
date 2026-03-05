@@ -143,7 +143,7 @@ PBPK_run <- function(model=template, load=TRUE,
   model$updateParms() # Reset all parameters to default values in the .model file.
   # Adjust default parameters by importing from given excel file
   mparms <- load.model.parameters(filename=model.param.filename,
-                                  sheetname=model.param.sheetname, model$parms)
+                                  sheetname=model.param.sheetname, parms=model$parms)
   parms <- mparms$parms
   chem <- mparms$chem
   species <- mparms$species
