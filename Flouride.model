@@ -22,16 +22,14 @@ States = {A_Li,         # ... liver (mg)
           R_0Li,        # Rate of continuous infusion to liver (mg/h)
           A_in,         # Total amount input to the system (mg)
           A_ch,         # Amount in closed chamber (mg)
-          A_exh,        # Amount exhaled (mg)
           A_Urine,      # Amount excreted via urinary elimination (mg)
-          Acl_Bo,       # Cumulative amount cleared to bone (mg)
           AUC_Ven,      # ... Venous blood (mg-h/L)
-          AUC_Art,      # ... Arterial blood (mg-h/L)
           AUC_Li,       # ... Liver (mg-h/L)
           AUC_Ki,       # ... Kidney (mg-h/L)
           AUC_Bo,       # ... bone (mg-h/L)
           AUC_RP,       # ... Rapidly Perfused (mg-h/L)
           AUC_SP,       # ... Slowly Perfused (mg-h/L)
+          Q_cc,         # Cardiac output coefficient (L/h/kg^AS_co)
           Conc_mgL};    # Concentration in ambient air (mg/L)
 
 # End of STATE VARIABLES.
@@ -45,25 +43,25 @@ States = {A_Li,         # ... liver (mg)
 Outputs = {A_bal,     # Mass balance (mg)
            A_body,    # Amount in body (mg)
            A_out,     # Amount that has left body (excreted) (mg)
-           C_li,      # Concentration in liver (mg/L)
-           C_ki,      # ... kidney (mg/L)
+           C_Li,      # Concentration in liver (mg/L)
+           C_Ki,      # ... Kidney (mg/L)
            C_Bo,      # ... bone (mg/L)
            C_RP,      # ... rapidly perfused (mg)
            C_SP,      # ... slowly perfused (mg/L)
            C_ch,      # ... chamber (mg/L)
-           C_ven,     # ... venous blood (mg/L)
-           C_art,     # ... arterial blood (mg/L)
+           C_Ven,     # ... venous blood (mg/L)
+           C_Art,     # ... arterial blood (mg/L)
            BW,        # Body weight (kg)
            Q_bal,     # Flow balance
            Q_c,       # Cardiac output (L/h)
            Q_Li,      # Blood flow rates to liver (L/h)
-           Q_Ki,      # ... kidney (L/h)
+           Q_Ki,      # ... Kidney (L/h)
            Q_Bo,      # ... bone (L/h)
            Q_RP,      # ... rapidly perfused (L/h)
            Q_SP,      # ... slowly perfused (L/h)
            CL_bKiU,   # Clearance from kidney venous blood to urine (L/h)
            R_inh,     # Rate of flouride inhalation (mg/L)
-	         V_bl,      # Volume of total blood (L)
+	         V_Bl,      # Volume of total blood (L)
            V_Ki,      # ... Kidney (L)
            V_Li,      # ... Liver (L)
            V_Bo,      # ... Bone (L)
@@ -150,7 +148,7 @@ Conc_ambient = 0.0; # Initial concentration of ambient air (ppm).
 
 #------------------------------------------------------------------------------
 # MODEL INITIALIZATION section.
-Initialize 
+Initialize {
     # Factor for converting ppm to mg/L.
     # 24.45 = L/mol (ideal gas law R*T/P) at 25C and 1 atmosphere.
     # MOLWT / 24.45 gives g/L of chemical at that temperature and pressure.
@@ -185,7 +183,6 @@ Initialize
     Q_cc = Q_cardiacc;
 
     AUC_Ven = 0.0;      # ... Venous blood (mg-h/L)
-    AUC_Art = 0.0;      # ... Arterial blood (mg-h/L)
     AUC_Li = 0.0;       # ... Liver (mg-h/L)
     AUC_Ki = 0.0;       # ... Kidney (mg-h/L)
     AUC_Bo = 0.0;       # ... Bone tissue (mg-h/L)
@@ -215,13 +212,13 @@ Dynamics {
     V_Li = V_Lic*BW;
     V_Bo = V_Boc*BW;
     V_RPt = (-0.005309*age + 1.008*pow(BW,0.493) + pow(BH,0.3765) - 7.952 +
-              0.002331*age + 0.1253*pow(BW,0.8477) + po(BH,0.3821) - 4.725)/2; # Total richly perfused 
+              0.002331*age + 0.1253*pow(BW,0.8477) + pow(BH,0.3821) - 4.725)/2; # Total richly perfused 
     V_RP = V_RPt - V_Ki - V_Li; # Other richly perfused
     V_SP = BW - V_Bo - V_RPt; # Other slowly perfused
     
     # Concentrations in tissue compartments.
-    C_Li = A_li / V_li;
-    C_Ki = A_ki / V_ki;
+    C_Li = A_Li / V_Li;
+    C_Ki = A_Ki / V_Ki;
     C_Bo = A_Bo / V_Bo;
     C_RP = A_RP / V_RP;
     C_SP = A_SP / V_SP;
@@ -236,7 +233,7 @@ Dynamics {
     # do not otherwise appear in the model:
     V_to = 0.00119*BW - 0.0004302; # Tongue volume
     V_he = 1.017e-7*pow( (pow(BH,0.6862)*pow(BW,0.3561) 
-                          + pow(BH,0.664)*pow(B,0.3851))*242.7/2, 1.42); # Heart 
+                          + pow(BH,0.664)*pow(BH,0.3851))*242.7/2, 1.42); # Heart 
     V_mu = (6.78*pow(SA,1.629) - 0.001492*age + 3.58 
           + 0.2598*BW + 0.1206*BH - 0.0043*age - 11.1)/2.08;  # Muscle
     V_ratio = V_SP/(V_to + V_he + V_mu); # Ratio of total SP volume to tongue + heart + muscle
@@ -249,7 +246,7 @@ Dynamics {
     Q_RP = Q_c - Q_Li - Q_Ki - Q_Bo - Q_SP;
     
     # Chemical-Specific Rates of Elimination and Transfer that scale with BW
-    CLp = 1.836*EXP(-0.166*age)*pow(BW,AS_pcl); # Total clearance from plasma (L/h ~ kg/h)
+    CLp = 1.836*exp(-0.166*age)*pow(BW,AS_pcl); # Total clearance from plasma (L/h ~ kg/h)
     FCLpU = 0.1 + 0.0222*age; # Fraction of plasma clearance going to urine (L/h)
     FCLpBo  = 1 - FCLpU; # Fraction of plasma clearance going to bone 
     CL_bKiU = FCLpU*CLp*P_PB; # Clearance from kidney venous blood to urine (L/h)
@@ -263,8 +260,8 @@ Dynamics {
       # is included here for to demonstrate replication of that model "as is".
       
     # Mass flow rates out of tissues
-    R_Qli_out = Q_Li*C_Li/P_Li;
-    R_Qki_out = Q_Ki*C_Ki/P_Ki;
+    R_QLi_out = Q_Li*C_Li/P_Li;
+    R_QKi_out = Q_Ki*C_Ki/P_Ki;
     R_QBo_out = Q_Bo*C_Bo/P_Bo;
     R_QRP_out = Q_RP*C_RP/P_RP;
     R_QSP_out = Q_SP*C_SP/P_SP;
@@ -281,20 +278,20 @@ Dynamics {
     R_inh = Q_v*F_inh*C_inh;  # Mass rate of inhalation
     R_ch_loss = KL*A_ch; # Rate chemical is lost from the chamber
 
-    # Concentration in venous and arterial blood (C_ven & C_art)
+    # Concentration in venous and arterial blood (C_Ven & C_Art)
     # The following internal variables simplify subsequent calculations:
-    C_ven = (R_Qli_out + R_Qki_out + R_Qom_out + R_QRP_out + R_QSP_out + R_IV)/Q_c;
-    C_art = C_ven + R_inh/Q_c;
+    C_Ven = (R_QLi_out + R_QKi_out + R_QBo_out + R_QRP_out + R_QSP_out + R_IV)/Q_c;
+    C_Art = C_Ven + R_inh/Q_c;
     
     # Mass flows to tissues (mg/h)
-    R_Qli_in = Q_li*C_art;
-    R_QKi_in = Q_Ki*C_art;
-    R_QBo_in = Q_Bo*C_art;
-    R_QRP_in = Q_RP*C_art;
-    R_QSP_in = Q_SP*C_art;
+    R_QLi_in = Q_Li*C_Art;
+    R_QKi_in = Q_Ki*C_Art;
+    R_QBo_in = Q_Bo*C_Art;
+    R_QRP_in = Q_RP*C_Art;
+    R_QSP_in = Q_SP*C_Art;
 
     # Excretion Rates (mg/h)
-    R_KiU = CLUb*C_Ki/P_Ki; # Rate to urine from kidney 
+    R_KiU = CL_bKiU*C_Ki/P_Ki; # Rate to urine from kidney 
     R_BoMiNet = CL_pBoNet*C_Bo/1000; # Nominal net CL from bone tissue to mineral
         # R_BoMiNet uses the bone tissue/plasma PC = 1000
     
@@ -305,15 +302,17 @@ Dynamics {
       dt(Conc_mgL) = 0; # Ambient air concentration
       dt(Q_cc) = 0;     # Cardiac output coefficient
       dt(R_IV) = 0;     # Intravenous infusion
+      dt(R_0Li) = 0;     # Zero order absorption added to liver
     
     dt(A_ch) = (V_ch ? - NCH*R_inh - R_ch_loss : 0.0);  # Closed chamber
+    dt(AUC_Ven) = C_Ven; # Venous blood AUC
 
-    dt(A_li) = R_Qli_in - R_Qli_out + R_0Li;  # Liver
-    dt(AUC_li) = C_Li;
+    dt(A_Li) = R_QLi_in - R_QLi_out + R_0Li;  # Liver
+    dt(AUC_Li) = C_Li;
 
     dt(A_Ki) = R_QKi_in - R_QKi_out + R_KiU;  # Kidney and urine
     dt(AUC_Ki) = C_Ki;
-    dt(A_urine) = R_KiU;  # Urine
+    dt(A_Urine) = R_KiU;  # Urine
     
     dt(A_Bo) = R_QBo_in - R_QBo_out;  # Bone
     dt(AUC_Bo) = C_Bo;
@@ -326,11 +325,11 @@ Dynamics {
     dt(AUC_SP) = C_SP;
    
     # Time rate of change of cumulative amount that has entered organism.
-    dt(A_in) = R_IV + R_oral + R_inh + R_0bgli;
+    dt(A_in) = R_IV + R_inh + R_0Li;
 
     # Mass balance.
     A_body = A_Li + A_Ki + A_Bo + A_RP + A_SP;
-    A_out = A_urine;
+    A_out = A_Urine;
     A_bal = A_in - A_body - A_out;
     
     # Flow balance check.
