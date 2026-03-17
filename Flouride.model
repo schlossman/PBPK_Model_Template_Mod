@@ -60,7 +60,9 @@ Outputs = {A_bal,     # Mass balance (mg)
            Q_RP,      # ... rapidly perfused (L/h)
            Q_SP,      # ... slowly perfused (L/h)
            CL_bKiU,   # Clearance from kidney venous blood to urine (L/h)
+           R_BoMiNet, # "Net" clearance from bone tissue to bone mineral (mg/h)
            R_inh,     # Rate of flouride inhalation (mg/L)
+           R_KiU,     # Rate of elimination in urine (mg/h)
 	         V_Bl,      # Volume of total blood (L)
            V_Ki,      # ... Kidney (L)
            V_Li,      # ... Liver (L)
@@ -227,7 +229,7 @@ Dynamics {
     Q_c = Q_cc*pow(BW, AS_co);
     Q_Li = 0.92*V_Li;
     Q_Ki = Q_Kic*Q_c;
-    Q_Bo = Q_Bo*Q_c;
+    Q_Bo = Q_Boc*Q_c;
 
     # Calculation of Q_SP involves specific tissue volumes and flows that
     # do not otherwise appear in the model:
@@ -310,7 +312,7 @@ Dynamics {
     dt(A_Li) = R_QLi_in - R_QLi_out + R_0Li;  # Liver
     dt(AUC_Li) = C_Li;
 
-    dt(A_Ki) = R_QKi_in - R_QKi_out + R_KiU;  # Kidney and urine
+    dt(A_Ki) = R_QKi_in - R_QKi_out - R_KiU;  # Kidney and urine
     dt(AUC_Ki) = C_Ki;
     dt(A_Urine) = R_KiU;  # Urine
     
