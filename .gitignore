@@ -58,3 +58,6 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# Big Excel file, not used as input:
+Model_Fluoride_Child_90 daysSim_QA-copy_02-25-2026.xlsx
