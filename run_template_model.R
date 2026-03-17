@@ -114,7 +114,7 @@ PBPK_run <- function(model=template, load=TRUE,
   # using model and exposure parameters as described in the input spreadsheets.
   #
   # data.times is a vector of time points (h) at which to return the simulation
-  #     output adj.parms is a named vector of .model parameters that will be 
+  #     output. adj.parms is a named vector of .model parameters that will be 
   #     adjusted to have the values given in adj.parms, overwriting the values 
   #     given in the model parameter and exposure parameter spreadsheets.
   # adj.parms is a list of 'par_name = value's that replace those in the spreadsheets.
