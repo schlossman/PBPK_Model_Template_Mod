@@ -60,56 +60,61 @@ update_vals <- function(p, np, stopifwarned=TRUE){
   return(p)
 }
 
-univ_blood <- function(model=template, species="human"){
+univ_blood <- function(parms, species="human"){
   # Creates a vector of alternate PBPK Template parameters that can be passed 
   # to PBPK_run() so that the model now runs with a lung tissue compartment and
   # both venous and arterial blood compartments solved as ODEs, not by steady-
   # state assumption.
-  return(within(c(as.list(model$parms),species=stringr::str_to_lower(species)), {
+  return(within(c(as.list(parms),species=stringr::str_to_lower(species)), {
     if (!species%in%c("rat","mouse","human")) {
       warning(paste0("Input species must 'rat', 'mouse', or 'human' (doube-quoted)."))
       stop()
     }
     V_blc_def = list(mouse=0.049, rat=0.074, human=0.079) # Brown et al. (1997), Table 21
     V_luc_def = list(mouse=0.0073, rat=0.005, human=0.0076) # Brown et al. (1997), Tables 4, 5 & 7
-    p = c(single_blood=0, venous_ss=0, arterial_ss=0, exist_lung=1)
+    parms[c("single_blood", "venous_ss", "arterial_ss", "exist_lung")] <- c(0, 0, 0, 1)
     V_rbcs = V_rbc # Save current value
     if ((V_artc==1) & (V_venc==1)) { # Both blood volumes = default
       if (V_blc==1) { # Default value, not realistic
         V_blc=V_blc_def[[species]] # Set to species default
-        if (V_rbc > V_blc) V_rbc = V_rbc - V_blc # Subtract from rest of body
+        if ((V_rbc!=1) & (V_rbc>V_blc)) V_rbc = V_rbc - V_blc # Subtract from rest of body
       }
-      p = c(p, V_artc=0.25*V_blc, V_venc=0.75*V_blc)
+      parms[c("V_artc", "V_venc")] <- c(0.25*V_blc, 0.75*V_blc)
       # Assumes these are 75%/25% of total (Brown et al., 1997).
     } else { # At least one of ven & art is *not* default. The next 2 lines
       # again assume 75%/25% = 3/1 ratio of V_venc to V_artc so that if either
       # V_x = 1, it can be set using this assumption and the volume of the other.
       if (V_venc==1) {
-        p = c(p, V_venc=3*V_artc) 
-        if (V_rbc > p[["V_venc"]]) V_rbc = V_rbc - p[["V_venc"]]
+        parms["V_venc"] <- 3*V_artc
+        if ((V_rbc!=1) & (V_rbc>parms[["V_venc"]])) V_rbc <- V_rbc - parms[["V_venc"]]
       }
       if (V_artc==1) {
-        p = c(p, V_artc=V_venc/3)
-        if (V_rbc > p[["V_artc"]]) V_rbc = V_rbc - p[["V_artc"]]
+        parms["V_artc"] <- V_venc/3
+        if ((V_rbc!=1) & (V_rbc>parms[["V_artc"]])) V_rbc <- V_rbc - parms[["V_artc"]]
       }
     }
+    parms["V_blc"] <- 1 
+    
     if (V_luc==1) { # Default value. Assume P_lu also not set
-       p = c(p, V_luc=V_luc_def[[species]])
-       if (V_rbc > p[["V_luc"]]) V_rbc = V_rbc - p[["V_luc"]]
-       p = c(p, P_lu=P_li) # Set PC to liver value as default, but...
-       if (V_kic!=1) p["P_lu"] = P_ki # Use kidney value if it is not default
-      
+       parms["V_luc"] <- V_luc_def[[species]]
+       if ((V_rbc!=1) & (V_rbc>parms[["V_luc"]])) { # If ROB volume is not default & > V_Luc
+         parms["V_rbc"] = V_rbc - parms[["V_luc"]] # Subtract V_luc from V_rbd and ...
+         parms["P_lu"] <- P_rb # Set PC to ROB value as default
+         # Otherwise allow total tissue mass fraction to just increase by V_luc
+       } else if (V_kic!=1) { 
+         parms["P_lu"] <- P_ki # Use kidney PC if it's volume is not default
+       } else { parms["P_lu"] <- P_li } # Set to liver PC
     }
-    if (V_rbc < V_rbcs) p = c(p, V_rbc=V_rbc)
-  })$p)
+    if (V_rbc < V_rbcs) parms["V_rbc"] <- V_rbc
+  })$parms)
 }
 
-PBPK_run <- function(model=template, load=TRUE, 
+PBPK_run <- function(model=template, load=TRUE, reportendog=FALSE, 
                      model.param.filename=NULL, model.param.sheetname=NULL, 
                      exposure.param.filename=NULL, exposure.param.sheetname=NULL, 
                      data.times=NULL, adj.parms=NULL, BW.table=NULL,
                      Freef.table=NULL, water.dose.frac=NULL, cust_expo=NULL,
-                     rtol=1e-8, atol=1e-8, method="lsoda", reportendog=FALSE){
+                     test_univ=FALSE, rtol=1e-8, atol=1e-8, method="lsoda"){
   # This function runs a simulation using the compiled MCSim model ("model")
   # using model and exposure parameters as described in the input spreadsheets.
   #
@@ -166,7 +171,9 @@ PBPK_run <- function(model=template, load=TRUE,
       if (any(np)) parms <- update_vals(parms, adj.parms[np])
       if (any(!(neo|nex|np))) stop(paste("The following parameters in adj.parms are 
                                          unused parameters:",n[which(!(neo|nex|np))]))
-      }
+  }
+  
+  if (test_univ) parms <- univ_blood(parms, species)
  
   # Check for incompatible parameters
   # Only one urinary excretion pathway should be used.
