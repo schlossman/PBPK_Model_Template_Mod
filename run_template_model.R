@@ -73,39 +73,35 @@ univ_blood <- function(parms, species="human"){
     V_blc_def = list(mouse=0.049, rat=0.074, human=0.079) # Brown et al. (1997), Table 21
     V_luc_def = list(mouse=0.0073, rat=0.005, human=0.0076) # Brown et al. (1997), Tables 4, 5 & 7
     parms[c("single_blood", "venous_ss", "arterial_ss", "exist_lung")] <- c(0, 0, 0, 1)
-    V_rbcs = V_rbc # Save current value
     if ((V_artc==1) & (V_venc==1)) { # Both blood volumes = default
-      if (V_blc==1) { # Default value, not realistic
-        V_blc=V_blc_def[[species]] # Set to species default
-        if ((V_rbc!=1) & (V_rbc>V_blc)) V_rbc = V_rbc - V_blc # Subtract from rest of body
-      }
-      parms[c("V_artc", "V_venc")] <- c(0.25*V_blc, 0.75*V_blc)
-      # Assumes these are 75%/25% of total (Brown et al., 1997).
-    } else { # At least one of ven & art is *not* default. The next 2 lines
-      # again assume 75%/25% = 3/1 ratio of V_venc to V_artc so that if either
-      # V_x = 1, it can be set using this assumption and the volume of the other.
-      if (V_venc==1) {
+      if (V_blc==1) V_blc=V_blc_def[[species]] # If template default value, V_blc ==> species default
+      parms["V_venc"] <- 0.75*V_blc # Assumes these are 75%/25% of total (Brown et al., 1997).
+      parms["V_artc"] <- 0.25*V_blc
+      if (Q_rbc & V_rbc>V_blc) V_rbc = V_rbc - V_blc # Subtract blood volume from rest of body
+    } else { # At least one of ven & art is *not* default. Continue to assume
+      # 75%/25% = 3/1 ratio of V_venc to V_artc so whichever V_xc = 1 can be 
+      # set using this assumption and the volume of the other.
+      if (V_venc==1) { # V_venc is Template default
         parms["V_venc"] <- 3*V_artc
-        if ((V_rbc!=1) & (V_rbc>parms[["V_venc"]])) V_rbc <- V_rbc - parms[["V_venc"]]
-      }
-      if (V_artc==1) {
+        if (Q_rbc & V_rbc>parms["V_venc"]) V_rbc <- V_rbc - parms["V_venc"]
+      } else { # V_artc is Template default
         parms["V_artc"] <- V_venc/3
-        if ((V_rbc!=1) & (V_rbc>parms[["V_artc"]])) V_rbc <- V_rbc - parms[["V_artc"]]
+        if (Q_rbc & V_rbc>parms["V_artc"]) V_rbc <- V_rbc - parms["V_artc"]
       }
     }
     parms["V_blc"] <- 1 
     
     if (V_luc==1) { # Default value. Assume P_lu also not set
        parms["V_luc"] <- V_luc_def[[species]]
-       if ((V_rbc!=1) & (V_rbc>parms[["V_luc"]])) { # If ROB volume is not default & > V_Luc
+       if (Q_rbc & V_rbc>parms["V_luc"]) { # If ROB is active and V_rbc > V_Luc
          parms["V_rbc"] = V_rbc - parms[["V_luc"]] # Subtract V_luc from V_rbd and ...
          parms["P_lu"] <- P_rb # Set PC to ROB value as default
-         # Otherwise allow total tissue mass fraction to just increase by V_luc
-       } else if (V_kic!=1) { 
-         parms["P_lu"] <- P_ki # Use kidney PC if it's volume is not default
-       } else { parms["P_lu"] <- P_li } # Set to liver PC
+         # Otherwise, allow total tissue mass fraction to increase by V_luc
+       } else if (Q_kic) { 
+         parms["P_lu"] <- P_ki # Use kidney PC if it is an active tissue
+       } else parms["P_lu"] <- P_li # Set to liver PC
     }
-    if (V_rbc < V_rbcs) parms["V_rbc"] <- V_rbc
+    parms["V_rbc"] <- V_rbc
   })$parms)
 }
 
