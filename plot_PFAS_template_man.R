@@ -442,7 +442,7 @@ load_PlasmaData <- function(chem=NULL, species=NULL, sex=NULL, dose.type=NULL, d
         Data <- Data[,data_cols]
       }
     } else if (dose.type == "iv"){
-      if (sex == "male" && dose == 10.0) Data <- read.csv(file=paste(data.loc, "Fig3b.csv", sep=""), header=TRUE, sep=",")
+      if (sex == "male" && dose == 10.0) Data <- read.csv(file=paste0(data.loc, "Fig3b.csv"), header=TRUE, sep=",")
       if (sex == "female" && (dose == 0.5 || dose == 1.0 || dose == 4.0 || dose == 10.0)) {
         Data <- read.csv(file=paste(data.loc, "Fig3a.csv", sep=""), header=TRUE, sep=",")
         if (dose == 10.0) data_cols=c(1,2,3,4)
