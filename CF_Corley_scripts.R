@@ -207,11 +207,11 @@ Corley.diffs <- function(species="rat", test=FALSE){
   # Import acslx results 
   acslx <- as.data.frame(read_excel(paste0("Data/Data_CF/",species,"_closed_chamber.xlsx")))
   if (test) {
-    print("Maximum percentage difference between published and 'universal'",quote=FALSE)
-    print(paste("blood and lung model structures for revised",species,"parameters."),quote=FALSE)
+    print.noquote("Maximum percentage difference between published and 'universal'")
+    print.noquote(paste("blood and lung model structures for revised",species,"parameters."))
     sheet1 = sheet2
   } else {
-    print(paste("Maximum percentage difference between Template and acslx",species,"models."),quote=FALSE)
+    print.noquote(paste("Maximum percentage difference between Template and acslx",species,"models."))
     sheet1 = paste0("Corley_",species,"_params")
   }
   
@@ -229,12 +229,12 @@ Corley.diffs <- function(species="rat", test=FALSE){
     
     print(paste("Experiment",i),quote=FALSE)
     if (test) {
-      print(paste("Corley vs 'universal:", max.diff(Cor$C_chppm, revi$C_chppm)),quote=FALSE)
+      print.noquote(paste("Corley vs 'universal:", max.diff(Cor$C_chppm, revi$C_chppm)))
     } else {
-      print(paste("a. Corley parameters:", 
-                  max.diff(Cor$C_chppm, acslx[paste0("exp",i,"_Cor")])),quote=FALSE)
-      print(paste("b. Revised parameters:", 
-                  max.diff(revi$C_chppm, acslx[paste0("exp",i,"_rev")])),quote=FALSE)
+      print.noquote(paste("a. Corley parameters:", 
+                  max.diff(Cor$C_chppm, acslx[paste0("exp",i,"_Cor")])))
+      print.noquote(paste("b. Revised parameters:", 
+                  max.diff(revi$C_chppm, acslx[paste0("exp",i,"_rev")])))
     }
   }
 }
