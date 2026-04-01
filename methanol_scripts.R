@@ -29,61 +29,51 @@ pub.col7.1 <- vcol7[1]; pub.col7.2 <- vcol7[2]; pub.col7.3 <- vcol7[3]
 templ.col7.1 <- vcol7[5]; templ.col7.2 <- vcol7[6]; templ.col7.3 <- vcol7[7]
 pub.lty <- "dashed"; templ.lty <- "solid"
 
-methanol.IRIS.FigB3 <- function(){
+methanol.IRIS.FigB3 <- function(test_univ=FALSE){
   # Simulates female Sprague-Dawley rats exposed to methanol via a bolus IV dose
   
   # Import data and IRIS simulations
-  data2500 <- read.csv(file = "Data/Data_Methanol/rat_Ward_iv_25.csv", header = FALSE)
-  names(data2500) <- c("time", "C_ven")
-  data500 <- read.csv(file = "Data/Data_Methanol/Pollack_500mg_iv.csv", header = FALSE)
-  names(data500) <- c("time", "C_ven")
-  data100 <- read.csv(file = "Data/Data_Methanol/rat_Ward_iv_1.csv", header = FALSE)
-  names(data100) <- c("time", "C_ven")
-  
-  sim2500 <- read.csv(file = "Data/Data_Methanol/IRIS_FigB3_r2500.csv", header = FALSE)
-  names(sim2500) <- c("time", "C_ven")
-  sim500 <- read.csv(file = "Data/Data_Methanol/IRIS_FigB3_r500.csv", header = FALSE)
-  names(sim500) <- c("time", "C_ven")
-  sim100 <- read.csv(file = "Data/Data_Methanol/IRIS_FigB3_r100.csv", header = FALSE)
-  names(sim100) <- c("time", "C_ven")
+  data <- list(high=read.csv(file = "Data/Data_Methanol/rat_Ward_iv_25.csv"),
+               med=read.csv(file = "Data/Data_Methanol/Pollack_500mg_iv.csv"),
+               low=read.csv(file = "Data/Data_Methanol/rat_Ward_iv_1.csv"))
+  sims <- list(high=read.csv(file = "Data/Data_Methanol/IRIS_FigB3_r2500.csv"),
+               med=read.csv(file = "Data/Data_Methanol/IRIS_FigB3_r500.csv"),
+               low=read.csv(file = "Data/Data_Methanol/IRIS_FigB3_r100.csv"))
+  doses <- list(low=100, med=500, high=2500)
+  cols <- list(low="black", med="darkgreen", high="blue")
   
   # Read in background blood concentration for use in plotting
   bgd <- load.exposure.parameters(filename="MeOH_template_parameters_Exposure.xlsx",
                                   sheetname="Ward_rat_iv_100", parms=NULL)$other_parms$C_ven_SS
   
-  C_ven <- NULL   # Empty array for venous blood results
-  for (ii in c(100, 500, 2500)){ # Set of IV doses
+  # Create Figure B3 from IRIS tox report
+  # Note, simulations are plotted minus background concentration of 3 mg/L
+  par(mar=c(3,3,1,1), mgp=c(1.5,0.5,0))
+  plot(x=0, y=0.1, log="y", ylim=c(1,10000), xlim=c(0,50), xlab="Time (hr)", 
+       ylab="Concentration of MeOH in Venous Blood (mg/L)")
+  for (ii in c("low","med","high")){ # Set of IV doses
+    points(data[[ii]]$time, data[[ii]]$C_ven, col=cols[[ii]])    
     out <- PBPK_run(model.param.filename = "MeOH_template_parameters_Model.xlsx",
                     model.param.sheetname = "IRIS_model_rat", 
                     exposure.param.filename = "MeOH_template_parameters_Exposure.xlsx", 
                     exposure.param.sheetname = "Ward_rat_iv_100",
-                    adj.parms = c(iv_dose=ii), data.times=sim2500$time)
-    C_ven <- cbind(C_ven, out$C_ven) 
-  }
-  C_ven <- C_ven - bgd # Results with background subtracted
-  
+                    adj.parms = c(iv_dose=doses[[ii]]), data.times=sims[[ii]]$time)
+    lines(out$time, out$C_ven-bgd, col=cols[[ii]], lwd=2)
+    if (test_univ) {
+      com <- PBPK_run(model.param.filename = "MeOH_template_parameters_Model.xlsx",
+                      model.param.sheetname = "IRIS_model_rat", 
+                      exposure.param.filename = "MeOH_template_parameters_Exposure.xlsx", 
+                      exposure.param.sheetname = "Ward_rat_iv_100", test_univ=TRUE,
+                      adj.parms = c(iv_dose=doses[[ii]]), data.times=sims[[ii]]$time)
+    } else com <- sims[[ii]]
+    lines(com$time, com$C_ven-bgd, col="red", lty="dotted", lwd=2)
   # Calculate error - percent difference between template and IRIS sims
-  print.noquote(paste("Max. percent difference for 100 mg/kg (to two decimal places):",
-              max.diff(C_ven[match(sim100$time,out$time),1], (sim100$C_ven-bgd))))
-  
-  # Create Figure B3 from IRIS tox report
-  # Note, simulations are plotted minus background concentration of 3 mg/L
-  par(mar=c(3,3,1,1), mgp=c(1.5,0.5,0))
-  plot(data100$time, data100$C_ven, col="black", log="y", ylim=c(1,10000), xlim=c(0,50),
-       xlab="Time (hr)", ylab="Concentration of MeOH in Venous Blood (mg/L)")
-  lines(out$time, C_ven[,1], col="black", lwd=2)
-  lines(sim100$time, sim100$C_ven-bgd, col="red", lty="dashed", lwd=2)
-  
-  points(data500$time, data500$C_ven, col="darkgreen")
-  lines(out$time, C_ven[,2], col="darkgreen", lwd=2)
-  lines(sim500$time, sim500$C_ven-bgd, col="red", lty="dashed", lwd=2)
-  
-  points(data2500$time, data2500$C_ven, col="blue")
-  lines(out$time, C_ven[,3], col="blue", lwd=2)
-  lines(sim2500$time, sim2500$C_ven-bgd, col="red", lty="dashed", lwd=2)
-  
+  print.noquote(paste("Max. percent difference for",doses[ii],
+                      "mg/kg (to three decimal places):", 
+                      max.diff(out$C_ven[-(1:2)], com$C_ven[-(1:2)])))
+  }
   legend("topright", legend = c("100 mg/kg", "500 mg/kg", "2500 mg/kg"),
-         col = c("black", "darkgreen", "blue"), lty = c(1, 1, 1))
+         col=c("black", "darkgreen", "blue"), lty = c(1,1,1), lwd=c(3,3,3))
 }
 
 methanol.IRIS.FigB4A <- function(img.name = NULL){
