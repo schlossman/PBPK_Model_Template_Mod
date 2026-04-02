@@ -78,17 +78,18 @@ univ_blood <- function(parms, species="human"){
       parms["V_venc"] <- 0.75*V_blc # Assumes these are 75%/25% of total (Brown et al., 1997).
       parms["V_artc"] <- 0.25*V_blc
       if (Q_rbc & V_rbc>V_blc) V_rbc = V_rbc - V_blc # Subtract blood volume from rest of body
-    } 
-    # Now, at least one of V_venc & V_artc is *not* default. Continue to assume
-    # 75%/25% = 3/1 ratio of V_venc to V_artc so if either V_xc still = 1, it 
-    # can be set using this assumption and the volume of the other.
-    if (V_venc==1) { # V_venc is Template default
-      parms["V_venc"] <- 3*V_artc
-      if (Q_rbc & V_rbc>parms["V_venc"]) V_rbc <- V_rbc - parms["V_venc"]
-    }
-    if (V_artc==1) { # V_artc is Template default
-      parms["V_artc"] <- V_venc/3
-      if (Q_rbc & V_rbc>parms["V_artc"]) V_rbc <- V_rbc - parms["V_artc"]
+    } else {
+      # At least one of V_venc & V_artc is *not* default. Continue to assume
+      # 75%/25% = 3/1 ratio of V_venc to V_artc so if either V_xc still = 1, 
+      # it can be set using this assumption and the volume of the other.
+      if (V_venc==1) { # V_venc is Template default
+        parms["V_venc"] <- 3*V_artc
+        if (Q_rbc & V_rbc>parms["V_venc"]) V_rbc <- V_rbc - parms["V_venc"]
+      } 
+      if (V_artc==1) { # V_artc is Template default
+        parms["V_artc"] <- V_venc/3
+        if (Q_rbc & V_rbc>parms["V_artc"]) V_rbc <- V_rbc - parms["V_artc"]
+      }
     }
     parms["V_blc"] <- 1 
     
