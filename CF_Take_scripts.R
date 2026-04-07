@@ -23,58 +23,78 @@ vcol = c("#440154FF", "#2A788EFF", "#7AD151FF") # viridis(3, begin = 0.0, end = 
 pub.col <- vcol[2]; templ.col <- vcol[3]; paper.col <- vcol[2]
 pub.lty <- "dashed"; templ.lty <- "solid"; paper.lty <- "dashed"
 
-one.comp.plot <- function(temp,tissname,data,acslx,ylim=c(0.005,100)){
+take.tiss <- function(out){
+  # Convert Template model output to corresponding values for Take et al. model
+  return(data.frame(time=out$time*60, blood_conc=out$C_ven, liver_conc=out$C_li,
+                    kidney_conc=(out$A_ki+out$A_om)/(out$V_ki+out$V_om), 
+                    fat_conc=out$C_tc3*0.9))
+}
+
+one.comp.plot <- function(temp,tissname,data,alt,ylim=c(0.005,100),test=FALSE){
   # Function to plot results of PBPK Mode Template (temp) vs. corresponding Take
   # et al. data (data) and acslX results (acslx) for tissue named tissname. 
   # temp and acslx = c(time vector, tissue concentration vector)
   # data = c(times, min values, mean values, max values)
+  col2=pub.col
+  lin2=pub.lty
+  if (test) {
+    col2="red"
+    lin2="dotted"
+  }
   plot(temp[,1], temp[,2], type="l", lwd=4, lty=templ.lty, cex=0.2,
        col=templ.col,  log="y", cex.main = 0.8, xlab="Time (min)", 
-       ylab=paste(tissname,"Concentration (mg/L)"),
+       ylab=paste0("[",tissname,"] (mg/L)"),
        xlim=c(0, 500), ylim=ylim, cex.lab = 1.25, yaxt="n", xaxt="n")
   axis(side=1, at=seq(from=0, to=500, by=100), cex.axis = 1.2)
   axis(side=2, at=c(0.001, 0.01, 0.1, 1.0, 10.0, 100.0),
        labels=c(0.001, 0.01, 0.1, 1.0, 10.0, 100.0), cex.axis = 1.2, las=1)
-  data=data.frame(data); acslx=data.frame(acslx)
+  data=data.frame(data); 
   points(data[,1], data[,2], type="p", pch=8, cex=1.5, col=pub.col)
   points(data[,1], data[,3], type="p", pch=19, cex=1.5, col=pub.col)
   points(data[,1], data[,4], type="p", pch=8, cex=1.5, col=pub.col)
-  lines(acslx[,1], acslx[,2], lwd=4, cex = 0.2, lty=pub.lty, col=pub.col)
+  lines(alt[,1], alt[,2], lwd=4, cex = 0.2, lty=lin2, col=col2)
 }
 
-Take.comp.plot <- function(out,range,take_data,take_acslx,ylimf=c(0.005, 100.0)){
+Take.comp.plot <- function(out, range, take_data, alt, ylimf=c(0.005, 100.0),
+                           test=FALSE){
   # Function to create set of plots of PBPK Mode Template results (out) vs.
-  # corresponding Take et al. data (take_data) and acslX results (take_acslx).
+  # corresponding Take et al. data (take_data) and alt results (acslx or other).
   # range = row range of out to plot.
-  out <- out[range,] # Time range to be plotted
-  time_min <- out$time*60 # Time in minutes
-  par(mfrow = c(2, 2), mar = c(5, 5, 0, 0), oma = c(3, 0, 1, 2))
-  one.comp.plot(temp=cbind(time_min,out$C_ven), tissname="Blood",
+  out <- take.tiss(out[range,]) # Time range to be plotted
+  altmod="Sasso et al. (2013) Model"
+  col2=pub.col
+  lin2=pub.lty
+  if (test) {
+    altmod="'Universal' blood & lung"
+    col2="red"
+    lin2="dotted"
+  }
+  
+  par(mfrow=c(2,2), mar=c(4,4.5,0,0), oma=c(3.2,0,1,2), mgp=c(2.3,0.6,0))
+  one.comp.plot(temp=cbind(out$time,out$blood_conc), tissname="Blood",
                 data=take_data[,c("time","blood_min","blood_data","blood_max")],
-                acslx=take_acslx[,c("time","blood_conc")]) 
-  one.comp.plot(temp=cbind(time_min,out$C_tc3*0.9), tissname="Fat",
+                alt=cbind(alt$time,alt$blood_conc),test=test) 
+  one.comp.plot(temp=cbind(out$time,out$fat_conc), tissname="Fat",
                 data=take_data[,c("time","fat_min","fat_data","fat_max")],
-                acslx=take_acslx[,c("time","fat_conc")], ylim=ylimf) 
-  kid_out <- (out$A_ki+out$A_om)/(out$V_ki+out$V_om)
-  one.comp.plot(temp=cbind(time_min,kid_out), tissname="Kidney",
+                alt=cbind(alt$time,alt$fat_conc), ylim=ylimf,test=test) 
+  one.comp.plot(temp=cbind(out$time,out$kidney_conc), tissname="Kidney",
                 data=take_data[,c("time","kidney_min","kidney_data","kidney_max")],
-                acslx=take_acslx[,c("time","kidney_conc")]) 
-  one.comp.plot(temp=cbind(time_min,out$C_li), tissname="Liver",
+                alt=cbind(alt$time,alt$kidney_conc),test=test) 
+  one.comp.plot(temp=cbind(out$time,out$liver_conc), tissname="Liver",
                 data=take_data[,c("time","liver_min","liver_data","liver_max")],
-                acslx=take_acslx[,c("time","liver_conc")]) 
+                alt=cbind(alt$time,alt$liver_conc),test=test) 
   par(mfrow = c(1,1), oma = c(0, 0, 0, 0), mar = c(0, 0, 0, 0), new = TRUE)
   plot(0, 0, type = "n", bty = "n", xaxt = "n", yaxt = "n")
   legend("bottomleft", c("Median Data", "Min/Max Data"), xpd = TRUE, 
          inset = c(0.15, -0.01), bty = "n", col = c(pub.col, pub.col),
          lty = c(NA,NA), pch = c(19,8), lwd = c(1,2), cex=1.12)
-  legend("bottomleft", c("Sasso et al. (2013) Model", "Template Version"),
-         xpd = TRUE, inset = c(0.57, -0.01), bty="n", col=c(pub.col, templ.col),
-         lty = c(pub.lty, templ.lty), pch = c(NA,NA), lwd = c(2,3), cex=1.12)
+  legend("bottomleft", c("Template Version", altmod),
+         xpd = TRUE, inset = c(0.57, -0.01), bty="n", col=c(templ.col, col2),
+         lty = c(templ.lty, lin2), pch = c(NA,NA), lwd = c(3,3), cex=1.12)
 }
 
-chloroform.Take.oral <- function(){
+chloroform.Take.oral <- function(test_univ=FALSE){
   # Creates manuscript Figure S-5
-  times = seq(from=0, to=600, by=0.1)/60 # Simulation times (min --> h).
   # Import data 
   take_data = read_excel("Data/Data_CF/Take_data.xlsx", sheet = "oral")
   take_acslx <- read_excel("Data/Data_CF/Take_acslx_output.xlsx", sheet = "oral")
@@ -82,9 +102,18 @@ chloroform.Take.oral <- function(){
   out <- PBPK_run(model.param.filename = "CF_template_parameters_Model.xlsx",
                   model.param.sheetname = "Revised_rat_params",
                   exposure.param.filename = "CF_template_parameters_Exposure.xlsx", 
-                  exposure.param.sheetname = "Take_oral",
-                  data.times = times)
-  Take.comp.plot(out, range=10:5500, take_data, take_acslx)
+                  exposure.param.sheetname = "Take_oral", 
+                  data.times = take_acslx$time/60) # Simulation times (min --> h)
+  if (test_univ) {
+    take_acslx  <- take.tiss(PBPK_run(model.param.filename = "CF_template_parameters_Model.xlsx",
+                      model.param.sheetname = "Revised_rat_params",
+                      exposure.param.filename = "CF_template_parameters_Exposure.xlsx", 
+                      exposure.param.sheetname = "Take_oral",
+                      data.times = take_acslx$time/60, test_univ = TRUE))
+  }
+  Take.comp.plot(out, range=5:5500, take_data, alt=take_acslx, test=test_univ)
+  print.noquote("The following values are calculated from the oral route models.")
+  res.diff.calc(out,alt=take_acslx,test=test_univ)
 }
 
 plot.CF.Take.oral <- function(){
@@ -93,9 +122,8 @@ plot.CF.Take.oral <- function(){
   dev.off()  
 }
 
-chloroform.Take.inhalation <- function(){
+chloroform.Take.inhalation <- function(test_univ=FALSE){
   # Creates manuscript Figure S-6
-  times = seq(from=0, to=600, by=0.1)/60 # Simulation times (min --> h)
   # Import data 
   take_data = read_excel("Data/Data_CF/Take_data.xlsx", sheet="inhalation")
   take_acslx <- read_excel("Data/Data_CF/Take_acslx_output.xlsx", sheet="inhalation")
@@ -104,19 +132,27 @@ chloroform.Take.inhalation <- function(){
                   model.param.sheetname = "Revised_rat_params",
                   exposure.param.filename = "CF_template_parameters_Exposure.xlsx", 
                   exposure.param.sheetname = "Take_inhalation",
-                  data.times = times)
-  Take.comp.plot(out, range=5:4810, take_data, take_acslx)
+                  data.times = take_acslx$time/60) # Simulation times (min --> h)
+  if (test_univ) {
+    take_acslx <- take.tiss(PBPK_run(model.param.filename = "CF_template_parameters_Model.xlsx",
+                      model.param.sheetname = "Revised_rat_params",
+                      exposure.param.filename = "CF_template_parameters_Exposure.xlsx", 
+                      exposure.param.sheetname = "Take_inhalation",
+                      data.times = take_acslx$time/60, test_univ = TRUE))
+  }
+  Take.comp.plot(out, range=5:4810, take_data, alt=take_acslx, test=test_univ)
+  print.noquote("The following values are calculated from the inhalation route models.")
+  res.diff.calc(out,alt=take_acslx,test=test_univ)
 }
 
-plot.CF.Take.inh <- function(){
+plot.CF.Take.inh <- function(test_univ = FALSE){
   svg(filename="plot.CF.Take.inh.svg", width=12, height=9, pointsize=12)
-  chloroform.Take.inhalation()
+  chloroform.Take.inhalation(test_univ = test_univ)
   dev.off()  
 }
 
-chloroform.Take.oral.and.inh <- function(){
+chloroform.Take.oral.and.inh <- function(test_univ = FALSE){
   # Reproduces results in manuscript Figure 9
-   times = seq(from=0, to=600, by=0.1)/60 # Simulation times (min --> h)
   # Import data 
   take_data = read_excel("Data/Data_CF/Take_data.xlsx", sheet = "oral_inhalation")
   take_acslx = read_excel("Data/Data_CF/Take_acslx_output.xlsx", sheet="oral_inhalation")
@@ -126,75 +162,44 @@ chloroform.Take.oral.and.inh <- function(){
                   model.param.sheetname = "Revised_rat_params",
                   exposure.param.filename = "CF_template_parameters_Exposure.xlsx", 
                   exposure.param.sheetname = "Take_oral_inh",
-                  data.times = times)
-  Take.comp.plot(out, range=7:6000, take_data, take_acslx, ylimf=c(0.005, 150.0))
+                  data.times = take_acslx$time/60)
+  if (test_univ) {
+    take_acslx <- take.tiss(PBPK_run(model.param.filename = "CF_template_parameters_Model.xlsx",
+                      model.param.sheetname = "Revised_rat_params",
+                      exposure.param.filename = "CF_template_parameters_Exposure.xlsx", 
+                      exposure.param.sheetname = "Take_oral_inh",
+                      data.times = take_acslx$time/60, test_univ = TRUE))
+  }
+  Take.comp.plot(out, range=7:6000, take_data, alt=take_acslx, ylimf=c(0.005, 150.0),
+                 test=test_univ)
+  print.noquote("The following values are calculated from the combined oral and inhalation route models.")
+  res.diff.calc(out,alt=take_acslx,test=test_univ)
 }
 
-plot.CF.Take.oral.inh <- function(){
+plot.CF.Take.oral.inh <- function(test_univ = FALSE){
   svg(filename="plot.CF.Take.oral.inh.svg", width=12, height=9, pointsize=12)
-  chloroform.Take.oral.and.inh()
+  chloroform.Take.oral.and.inh(test_univ = test_univ)
   dev.off()  
 }
 
-res.diff.calc <- function(out,acslx){
+res.diff.calc <- function(out,alt,test=FALSE){
   # Calculate differences between PBPK Model Template ('out') and acslx results
   # for venous blood, fat, kidney and liver predictions.
-  out <- data.frame(time=out$time*60, bl=out$C_ven, fat=out$C_tc3*0.9, 
-                    kid=(out$A_ki+out$A_om)/(out$V_ki+out$V_om), li=out$C_li)
-  res_merge <- na.omit(merge(out, acslx, by.x='time'))
-  print("Maximum percentage difference between template and acslx models (rounded to 0.001%).",quote=FALSE)
-  print(paste("  in blood compartment:", max.diff(res_merge$bl, res_merge$blood_conc)),quote=FALSE)
-  print(paste("    in fat compartment:", max.diff(res_merge$fat, res_merge$fat_conc)),quote=FALSE)
-  print(paste(" in kidney compartment:", max.diff(res_merge$kid, res_merge$kidney_conc)),quote=FALSE)
-  print(paste("  in liver compartment:", max.diff(res_merge$li, res_merge$liver_conc)),quote=FALSE)
-}
-
-Take.oral.diffs <- function(){
-  # Calculate error: percent difference between template and acslx models for 
-  # Take oral exposure.
-  
-  # Import acslx results:
-  acslx = read_excel("Data/Data_CF/Take_acslx_output.xlsx", sheet = "oral")
-  # Get PBPK Mode Template results:
-  out <- PBPK_run(model.param.filename = "CF_template_parameters_Model.xlsx", 
-                  model.param.sheetname = "Revised_rat_params", 
-                  exposure.param.filename = "CF_template_parameters_Exposure.xlsx", 
-                  exposure.param.sheetname = "Take_oral",
-                  data.times=acslx$time/60)
-  print("The following values are calculated from the oral route models.",
-        quote=FALSE)
-  res.diff.calc(out,acslx)
-}
-
-Take.inhal.diffs <- function(){
-  # Calculate error: percent difference between template and acslx models for 
-  # Take inhalation exposure.
-
-  # Import acslx results:
-  acslx = read_excel("Data/Data_CF/Take_acslx_output.xlsx", sheet="inhalation")  
-  # Get PBPK Mode Template results:
-  out <- PBPK_run(model.param.filename = "CF_template_parameters_Model.xlsx",
-                  model.param.sheetname = "Revised_rat_params",
-                  exposure.param.filename = "CF_template_parameters_Exposure.xlsx", 
-                  exposure.param.sheetname = "Take_inhalation",
-                  data.times=acslx$time/60)
-  print("The following values are calculated from the inhalation route models.",
-        quote=FALSE)
-  res.diff.calc(out,acslx)
-}
-
-Take.oral.and.inhal.diffs <- function(){
-  # Calculate error: percent difference between template and acslx models for
-  # Take combined oral and inhalation exposure.
-  
-  # Import acslx results:
-  acslx = read_excel("Data/Data_CF/Take_acslx_output.xlsx", sheet="oral_inhalation")
-  out <- PBPK_run(model.param.filename = "CF_template_parameters_Model.xlsx",
-                  model.param.sheetname = "Revised_rat_params",
-                  exposure.param.filename = "CF_template_parameters_Exposure.xlsx", 
-                  exposure.param.sheetname = "Take_oral_inh",
-                  data.times=acslx$time/60)
-  print("The following values are calculated from the combined oral and inhalation route models.", 
-        quote=FALSE)
-  res.diff.calc(out,acslx)
+  out <- take.tiss(out)
+  if (test) { other="'universal'" } else { other = "acslx" }
+  print.noquote(paste("Maximum percentage difference between template and",
+                      other,"models (rounded to 0.001%)."))
+  print.noquote(paste("  in blood compartment:", max.diff(out$blood_conc, alt$blood_conc)))
+  print.noquote(paste("    in fat compartment:", max.diff(out$fat_conc, alt$fat_conc)))
+  print.noquote(paste(" in kidney compartment:", max.diff(out$kidney_conc, alt$kidney_conc)))
+  print.noquote(paste("  in liver compartment:", max.diff(out$liver_conc, alt$liver_conc)))
+  if (test) {
+    print.noquote("Maximum percentage differences for time >/= 12 min.")
+    out <- out[(out$time>=12),]
+    alt <- alt[(alt$time>=12),]
+    print.noquote(paste("  in blood compartment:", max.diff(out$blood_conc, alt$blood_conc)))
+    print.noquote(paste("    in fat compartment:", max.diff(out$fat_conc, alt$fat_conc)))
+    print.noquote(paste(" in kidney compartment:", max.diff(out$kidney_conc, alt$kidney_conc)))
+    print.noquote(paste("  in liver compartment:", max.diff(out$liver_conc, alt$liver_conc)))
   }
+}
