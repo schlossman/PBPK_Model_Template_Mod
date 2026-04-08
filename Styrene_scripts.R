@@ -17,138 +17,105 @@ source("run_template_model.R")
 vcol3 = c("#440154FF", "#2A788EFF", "#7AD151FF") # viridis(3, begin = 0.0, end = 0.8)
 vcol5 = c("#440154FF", "#414487FF", "#2A788EFF", "#22A884FF", "#7AD151FF") # viridis(5, begin = 0.0, end = 0.8)
 
-pub.col <- vcol3[2]; pub.col5.1 <- vcol5[1]; pub.col5.2 <- vcol5[2]
-templ.col <- vcol3[3]; templ.col5.1 <- vcol5[4]; templ.col5.2 <- vcol5[5]
-pub.lty <- "dashed"; templ.lty <- "solid"
 
-styrene.fig2 <- function(img.name = NULL){
-  # Figure 2: 6-hour inhalation exposure for rats
-  
-  # Load Data, then get time/blood conc subsets that are not NA
-  d_80 = read.csv(file ="Data/Data_Styrene/fig2a_80ppm.csv", header = TRUE)
-    tb_80 = !is.na(d_80$time_blood_sim)
-    cb_80 = d_80$blood_sim[tb_80]
-    tb_80 = d_80$time_blood_sim[tb_80]
-  d_200 = read.csv(file ="Data/Data_Styrene/fig2b_200ppm.csv", header = TRUE)
-    tb_200 = !is.na(d_200$time_blood_sim)
-    cb_200 = d_200$blood_sim[tb_200]
-    tb_200 = d_200$time_blood_sim[tb_200] 
-  d_600 = read.csv(file ="Data/Data_Styrene/fig2c_600ppm.csv", header = TRUE)
-    tb_600 = !is.na(d_600$time_blood_sim)
-    cb_600 = d_600$blood_sim[tb_600]
-    tb_600 = d_600$time_blood_sim[tb_600] 
-  d_1200 = read.csv(file ="Data/Data_Styrene/fig2d_1200ppm.csv", header = TRUE)
-    tb_1200 = !is.na(d_1200$time_blood_sim)
-    cb_1200 = d_1200$blood_sim[tb_1200]
-    tb_1200 = d_1200$time_blood_sim[tb_1200] 
 
-  # Set up simulation runs
-  times <- sort(unique(c(0, tb_80, tb_200, tb_600, tb_1200)))
-  C_art <- C_fat <- NULL
-  
+styrene.fig2 <- function(img.name = NULL, test_univ=FALSE){
+  # Recreate Figure 2 from Ramsey and Andersen (1984): 6-h rat inhalation exposure
+  if (!is.null(img.name)) tiff(img.name, res=300, height=6, width=7, units="in")
+  par(mfrow=c(2,2), mar=c(3,3,0,0), oma=c(4,0,1,1), mgp=c(1.5,0.5,0))
+  pub.col <- vcol3[2]; pub.col5.1 <- vcol5[1]; pub.col5.2 <- vcol5[2]
+  templ.col <- vcol3[3]; templ.col5.1 <- vcol5[4]; templ.col5.2 <- vcol5[5]
+  pub.lty <- "dashed"; templ.lty <- "solid"; compmodel = "Published Model"
+  if (test_univ){
+    compmodel = "'Universal' blood & lung"
+    pub.col5.1 <- pub.col5.2 <- "red"
+  }
+ 
+  print("Percent differences are calculated relative to the maximum blood concentration.",
+        quote=FALSE)
   for (ii in c(80,200,600,1200)){ #for each concentration
+    # Load Data, then get time/blood conc subsets that are not NA
+    data = read.csv(file =paste0("Data/Data_Styrene/fig2_",ii,"ppm.csv"), header = TRUE)
+      tb = !is.na(data$time_blood_sim); tf = !is.na(data$time_fat_sim)
+      cb = data$blood_sim[tb]; cf = data$fat_sim[tf] # Blood & fat simulations
+      tb = data$time_blood_sim[tb]; tf = data$time_fat_sim[tf] # Simuation times
+      tbd = !is.na(data$time_blood_data); tfd = !is.na(data$time_fat_data)
+      cbd = data$blood_data[tbd]; cfd = data$fat_data[tfd] # Blood & fat data
+      tbd = data$time_blood_data[tbd]; tfd = data$time_fat_data[tfd] # Data times
+      
+    times <- sort(unique(c(0, tb, tf))) # Simulation times
     out <- PBPK_run(model.param.filename = "Styrene_template_parameters_Model.xlsx",
-                    model.param.sheetname = "rat", 
+                    model.param.sheetname = "rat",
                     exposure.param.filename = "Styrene_template_parameters_Exposure.xlsx", 
                     exposure.param.sheetname = "inhalation_Fig2", 
                     adj.parms = c(Conc_init = ii), data.times = times)
-    C_art <- cbind(C_art, out$C_art)
-    C_fat <- cbind(C_fat, out$C_tc1)
+    if (test_univ){
+      tb <- tf <- times
+      alt = PBPK_run(model.param.filename = "Styrene_template_parameters_Model.xlsx",
+                    model.param.sheetname = "rat", 
+                    exposure.param.filename = "Styrene_template_parameters_Exposure.xlsx", 
+                    exposure.param.sheetname = "inhalation_Fig2", 
+                    adj.parms=c(Conc_init=ii), data.times=tb, test_univ=TRUE)
+      cb = alt$C_art; cf = alt$C_tc1 # tc1 = fat
+    }
+    
+    # Calculate error - percent difference between template and at or published sims
+    print.noquote(paste("Max. percent difference for",ii,"ppm:",
+                  max.diff.scale(out$C_art[match(tb,times)], cb, sc=max(cb)) ))
+    
+    plot(tbd, cbd, pch=19, col=pub.col, ylab="Concentration (mg/L)", log="y", 
+         xlim=c(0,24), xaxp=c(0,24,6), xlab="Time (hr)", 
+         ylim=10^c(floor(log10(min(out$C_art,cbd))), 
+                   ceiling(log10(max(out$C_tc1,cf,cfd)))) )
+    lines(times, out$C_art, col = templ.col5.1, lty = templ.lty, lwd = 3)
+    lines(times, out$C_tc1, col = templ.col5.2, lty = templ.lty, lwd = 3)
+    points(tfd, cfd, pch = 17, col = pub.col)
+    lines(tb, cb, col = pub.col5.1, lty = pub.lty, lwd = 2)
+    lines(tf, cf, col = pub.col5.2, lty ="dotdash", lwd = 2)
+    title(paste(ii,"ppm"), line = -1)
   }
-  
-  # Calculate error - percent difference between template and published sims
-  print("Percent differences are calculated relative to the scale of the digitized figures.",
-        quote=FALSE)
-  print(paste("Max. percent difference for 80 ppm:", 
-              max.diff.scale(C_art[match(tb_80,times),1], cb_80, sc=100) ), quote=FALSE)
-  print(paste("Max. percent difference for 200 ppm:", 
-              max.diff.scale(C_art[match(tb_200,times),2], cb_200, sc=1000) ), quote=FALSE)
-  print(paste("Max. percent difference for 600 ppm:", 
-              max.diff.scale(C_art[match(tb_600,times),3], cb_600, sc=10000) ), quote=FALSE)
-  print(paste("Max. percent difference for 1200 ppm:", 
-              max.diff.scale(C_art[match(tb_1200,times),4], cb_1200, sc=10000) ), quote=FALSE)
- 
-  # Recreate Figure 2 from Ramsey and Andersen (1984)
-  if (!is.null(img.name)) tiff(img.name, res=300, height=6, width=7, units="in")
-  
-  par(mfrow=c(2,2), mar=c(3,3,0,0), oma=c(4,0,1,1), mgp=c(1.5,0.5,0))
-  # 80 ppm
-  plot(d_80$time_blood_data, d_80$blood_data, pch=19, col=pub.col, 
-       log="y", xlab="Time (hr)", xlim=c(0,24), xaxp=c(0,24,6), 
-       ylab="Concentration (mg/L)", ylim=c(0.0001, 100))
-  lines(times, C_art[,1], col = templ.col5.1, lty = templ.lty, lwd = 3)
-  lines(times, C_fat[,1], col = templ.col5.2, lty = templ.lty, lwd = 3)
-  points(d_80$time_fat_data, d_80$fat_data, pch = 17, col = pub.col)
-  lines(tb_80, cb_80, col = pub.col5.1, lty = pub.lty, lwd = 2)
-  lines(d_80$time_fat_sim, d_80$fat_sim, col = pub.col5.2, lty ="dotdash", lwd = 2)
-  title("80 ppm", line = -1.25)
-  
-  # 200 ppm
-  plot(d_200$time_blood_data, d_200$blood_data, pch=19, col=pub.col, 
-       log="y", xlab="Time (hr)", xlim=c(0,24), xaxp=c(0,24,6), 
-       ylab="Concentration (mg/L)", ylim=c(0.001, 1000))
-  lines(times, C_art[,2], col = templ.col5.1, lty = templ.lty, lwd = 3)
-  lines(times, C_fat[,2], col = templ.col5.2, lty = templ.lty, lwd = 3)
-  points(d_200$time_fat_data, d_200$fat_data, pch = 17, col = pub.col)
-  lines(d_200$time_blood_sim, d_200$blood_sim, col=pub.col5.1, lty=pub.lty, lwd=2)
-  lines(d_200$time_fat_sim, d_200$fat_sim, col=pub.col5.2, lty="dotdash", lwd=2)
-  title("200 ppm", line = -1.25)
-  
-  # 600 ppm
-  plot(d_600$time_blood_data, d_600$blood_data, pch=19, col=pub.col, 
-       log="y", xlab="Time (hr)", xlim=c(0,24), xaxp=c(0,24,6), 
-       ylab="Concentration (mg/L)", ylim=c(0.01, 10000))
-  lines(times, C_art[,3], col = templ.col5.1, lty = templ.lty, lwd = 3)
-  lines(times, C_fat[,3], col = templ.col5.2, lty = templ.lty, lwd = 3)
-  points(d_600$time_fat_data, d_600$fat_data, pch = 17, col = pub.col)
-  lines(tb_600, cb_600, col = pub.col5.1, lty = pub.lty, lwd = 2)
-  lines(d_600$time_fat_sim, d_600$fat_sim, col = pub.col5.2, lty ="dotdash", lwd = 2)
-  title("600 ppm", line = -1.25)
-  
-  # 1200 ppm
-  plot(d_1200$time_blood_data, d_1200$blood_data, pch=19, col=pub.col, 
-       log="y", xlab="Time (hr)", xlim=c(0,24), xaxp=c(0,24,6), 
-       ylab="Concentration (mg/L)", ylim=c(0.01, 10000))
-  lines(times, C_art[,4], col = templ.col5.1, lty = templ.lty, lwd = 3)
-  lines(times, C_fat[,4], col = templ.col5.2, lty = templ.lty, lwd = 3)
-  points(d_1200$time_fat_data, d_1200$fat_data, pch = 17, col = pub.col)
-  lines(d_1200$time_blood_sim, d_1200$blood_sim, col = pub.col5.1, lty = pub.lty, lwd = 2)
-  lines(d_1200$time_fat_sim, d_1200$fat_sim, col = pub.col5.2, lty ="dotdash", lwd = 2)
-  title("    1200 ppm", line = -1.25)
-  
+
   par(mfrow = c(1,1), oma = c(0, 0, 0, 0), mar = c(0, 0, 0, 0), new = TRUE)
   plot(0, 0, type ="n", bty ="n", xaxt ="n", yaxt ="n")
   
-  legend("bottomleft", c("Published Data - blood", "Published Model - blood",
+  legend("bottomleft", c("Published Data - blood", paste(compmodel,"- blood"),
                     "Template Version - blood"), 
          xpd = TRUE, inset = c(0.12, 0), bty = "n", lty=c(NA,pub.lty,templ.lty), 
          col=c(pub.col,pub.col5.1,templ.col5.1), pch=c(19,NA,NA), lwd=c(1,2,3))
-  legend("bottomright", c("Published Data - fat", "Published Model - fat", 
+  legend("bottomright", c("Published Data - fat", paste(compmodel,"- fat"), 
                     "Template Version - fat"),
          xpd=TRUE, inset=c(0.12, 0), bty = "n", lty=c(NA,"dotdash",templ.lty), 
          col=c(pub.col,pub.col5.2,templ.col5.2), pch = c(17,NA,NA), lwd=c(1,2,3))
   if (!is.null(img.name)) dev.off()
 }
 
-styrene.fig3 <- function(img.name = NULL){
+styrene.fig3 <- function(img.name = NULL, test_univ=FALSE){
   # Figure 3: IV infusion exposure for rats
   
   # Load Data
   dfig3 = read.csv(file = "Data/Data_Styrene/fig3.csv", header = TRUE)
-  
+  col2=pub.col; name2 = "Published Model"
   out <- PBPK_run(model.param.filename = "Styrene_template_parameters_Model.xlsx",
                   model.param.sheetname = "rat", 
                   exposure.param.filename = "Styrene_template_parameters_Exposure.xlsx", 
                   exposure.param.sheetname = "iv_Fig3",
-                  data.time = c(0,dfig3$time_conc_sim))
+                  data.time = dfig3$time_conc_sim)
+  if (test_univ){
+    dfig3$conc_sim = PBPK_run(model.param.filename = "Styrene_template_parameters_Model.xlsx",
+                              model.param.sheetname = "rat", 
+                              exposure.param.filename = "Styrene_template_parameters_Exposure.xlsx", 
+                              exposure.param.sheetname = "iv_Fig3",
+                              data.time = dfig3$time_conc_sim, test_univ = TRUE)$C_ven[-1]
+    col2="red"; name2="'Universal' blood & lung"
+  }
   
   # Calculate error - percent difference between template and published sims
-  print("Percent differences are calculated relative to the scale of the digitized figure.",
+  print("Percent differences are calculated relative to the blood Cmax.",
         quote=FALSE)
-  v = match(dfig3$time_conc_sim,out$time)
-  err = perc.diff(out$C_ven[v], dfig3$conc_sim, sc=100)
-  print(paste("Max. percent difference:", max(err) ), quote=FALSE)
-  plot(out$time[v], err, xlab = "Time (hr)", ylab = "Percent Difference")
+  err = perc.diff(out$C_ven[-1], dfig3$conc_sim, sc=max(out$C_ven))
+  print.noquote(paste("Max. % difference:", max(err) ))
+  print.noquote(paste("Max. % difference after 3 mnin:", max(err[dfig3$time_conc_sim > 0.05]) ))
+  plot(out$time[-1], err, xlab = "Time (hr)", ylab = "Percent Difference")
   
   # Recreate Figure 3 from Ramsey and Andersen (1984)
   if (!is.null(img.name)) tiff(img.name, res=300, height=6, width=7, units="in")
@@ -157,9 +124,9 @@ styrene.fig3 <- function(img.name = NULL){
        xaxp=c(0,3.2,8), xlab="Time (hr)", ylab="Concentration (mg/L)",
        ylim=c(0.03,30), yaxp=c(0.03,30,2), log="y")
   lines(out$time, out$C_ven, col = templ.col, lty = templ.lty, lwd = 3)
-  lines(dfig3$time_conc_sim, dfig3$conc_sim, col=pub.col, lty=pub.lty, lwd=2)
-  legend("topright", pch = c(19, NA, NA),
-         legend = c("Published Data", "Published Model", "Template Version"), 
-         col = c(pub.col,pub.col,templ.col), lty = c(NA,pub.lty,templ.lty))
+  lines(dfig3$time_conc_sim, dfig3$conc_sim, col=col2, lty=pub.lty, lwd=2)
+  legend("topright", pch = c(19, NA, NA), lwd=c(1,2,3),
+         legend = c("Published Data", name2, "Template Version"), 
+         col = c(pub.col,col2,templ.col), lty = c(NA,pub.lty,templ.lty))
   if (!is.null(img.name)) dev.off()
 }
