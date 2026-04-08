@@ -10,6 +10,9 @@
 # been suppressed. To see the simulations with the incorrect published flow 
 # rate leaving the liver for these models, see the PFAS PBPK template published
 # on the US EPA Environmental Dataset Gateway (https://doi.org/10.23719/1520081).
+# 
+# Revisions for comparison with 'universal' blood & lung structure:
+#   Paul Schlosser, March 2026
 
 # Set working directory to the directory containing this file.
 script.dir = dirname(sys.frame(1)$ofile)

@@ -18,6 +18,10 @@
 # Aug-Dec 2025
 #  - convert to use MCSimMod instead of older R/MCSim commands
 #  - Paul Schlosser, U.S. EPA
+#
+# Mar-Apr 2026
+#  - add functions, adapt run_model() for use of 'universal' blood & lung option
+#  - Paul Schlosser, U.S. EPA
 #------------------------------------------------------------------------------
 
 # Load libraries and essential MCSimMod and PBPK_run() functions.

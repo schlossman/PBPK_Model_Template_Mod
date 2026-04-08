@@ -1,5 +1,7 @@
 # R functions to create figures used in the PFAS PBPK model template manuscript
 #  Bernstein, et al. (2021)
+# Revisions to facilitate 'universal' blood $ lung mode structure comparison:
+#  Paul Schlosser, March, 2026
 
 plot.Kim <- function(out, out.inc=NULL, chem, sex, dose, img.name=NULL, Pylims=NULL, 
                      second_sim_legend="Template Version with Published Flow"){

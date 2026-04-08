@@ -5,7 +5,9 @@
 # experiments modeled by Sasso et. al. (2013).
 #
 # Author: Bidya Prasad, December 2021
-# Revisions for use with MCSimMod: Pau Schlosser, November 2025
+# Revisions for use with MCSimMod: Paul Schlosser, November 2025
+# Revisions for comparison with 'universal' blood & lung structure:
+#   Paul Schlosser, April 2026
 #------------------------------------------------------------------------------
 
 # Set working directory to the directory containing this file.

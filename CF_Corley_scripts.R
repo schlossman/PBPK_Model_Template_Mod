@@ -6,6 +6,8 @@
 #
 # Author: Bidya Prasad, December 2021
 # Revisions for use with MCSimMod: Pau Schlosser, Nov-Dec 2025
+# Revisions for comparison with 'universal' blood & lung structure:
+#   Paul Schlosser, April 2026
 #------------------------------------------------------------------------------
 
 # Set working directory to the directory containing this file.
