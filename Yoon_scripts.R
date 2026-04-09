@@ -2,18 +2,14 @@
 # Model template simulations 
 # Author: Amanda Bernstein, US EPA (ORISE), January 2023
 # Revisions for use with MCSimMod: Paul Schlosser, December 2025
+# Revisions for comparison with 'universal' blood & lung structure:
+#   Paul Schlosser, April 2026
 
 # Set working directory to the directory containing this file.
 script.dir = dirname(sys.frame(1)$ofile); setwd(script.dir)
 source("run_template_model.R") # Load functions to run the PBPK model template.
 
 # Table 5: Periodic inhalation exposure for 2 month old rats
-
-make_t5 <- function(conc){ # Creates table 5 (t5) structure filled with NaNs
-  Cmax <- AUC <- AM <- AMLVL <- LungEHM <- KidneyEHM <- rep(NaN,length(conc))
-  EHM <- c(rep("no",length(conc)),rep("yes",length(conc)))
-  return(data.frame(conc, EHM, Cmax, AUC, AM, AMLVL, LungEHM, KidneyEHM))
-}
 
 daily_avg <- function(out, t5, idx){
   # Compute daily averages over the last week of simulations in Yoon.table5 
@@ -32,126 +28,63 @@ daily_avg <- function(out, t5, idx){
   return(t5)
 }
 
-# VC results
-Yoon.table5.VC <- function(){
-  # Table 5 VC Results: 
+Yoon.table5 <- function(chem="VC", test_univ = FALSE){
+  # Yoon et al. (2007) Table 5 Results. 'chem' can also be "TCE" or "CCl4"
   # 4-hour inhalation exposure, 5 days per week for 2 month old rats
+  if (chem=="VC"){
+    esheet = "inhal_4hr_5dweek"
+    conc <- c(1,10000)
+  } else if (chem=="TCE"){
+    esheet = "inhal_8hr_5dweek"
+    conc <- c(50,600)
+    } else {
+      esheet = "inhal_6hr_5dweek"
+      conc <- c(5,400)
+    }
   
   # Load values saved from previous version of this function (used the old MCSim method):
-  s5 <- as.data.frame(readRDS("Data/Yoon.table5.VC.rds"))
+  s5 <- as.data.frame(readRDS(paste0("Data/Yoon.table5.",chem,".rds")))
   
   # Set up simulation runs
-  t5 <- make_t5(conc <- c(1,10000)); idx = 1
+  Cmax <- AUC <- AM <- AMLVL <- LungEHM <- KidneyEHM <- rep(NaN,length(conc))
+  EHM <- c(rep("no",length(conc)),rep("yes",length(conc)))
+  at5 <- t5 <- data.frame(conc, EHM, Cmax, AUC, AM, AMLVL, LungEHM, KidneyEHM)
+  idx = 1
   
-  # Compute dose metrics without extra-hepatic metabolism
-  for (ii in conc){ # for each concentration
-    out <- PBPK_run(model.param.filename = "Yoon_template_parameters_Model.xlsx",
-                    model.param.sheetname = "2mo_VC_noEHM", 
-                    exposure.param.filename = "Yoon_template_parameters_Exposure.xlsx", 
-                    exposure.param.sheetname = "inhal_4hr_5dweek", 
-                    adj.parms = c(Conc_init = ii))
-    t5 <- daily_avg(out, t5, idx)
-    idx = idx + 1
+  # Compute dose metrics without, then with extra-hepatic metabolism
+  for (psheet in c(paste0("2mo_",chem,"_noEHM"), paste0("2mo_",chem,"_EHM"))) {
+    for (ii in conc){ # for each concentration
+      out <- PBPK_run(model.param.filename = "Yoon_template_parameters_Model.xlsx",
+                      model.param.sheetname = psheet, 
+                      exposure.param.filename = "Yoon_template_parameters_Exposure.xlsx", 
+                      exposure.param.sheetname = esheet, 
+                      adj.parms = c(Conc_init = ii))
+      t5 <- daily_avg(out, t5, idx)
+      if (test_univ){
+        out <- PBPK_run(model.param.filename = "Yoon_template_parameters_Model.xlsx",
+                        model.param.sheetname = psheet, 
+                        exposure.param.filename = "Yoon_template_parameters_Exposure.xlsx", 
+                        exposure.param.sheetname = esheet, 
+                        adj.parms = c(Conc_init = ii), test_univ = TRUE)
+        at5 <- daily_avg(out, at5, idx)
+      }
+      idx = idx + 1
+    }
   }
   
-  # Compute dose metrics with extra-hepatic metabolism
-  for (ii in conc){ #for each concentration
-    out <- PBPK_run(model.param.filename = "Yoon_template_parameters_Model.xlsx",
-                    model.param.sheetname = "2mo_VC_EHM", 
-                    exposure.param.filename = "Yoon_template_parameters_Exposure.xlsx", 
-                    exposure.param.sheetname = "inhal_4hr_5dweek", 
-                    adj.parms = c(Conc_init = ii))
-    t5 <- daily_avg(out, t5, idx)
-    idx = idx + 1
-  }
   # Append table of % differences between current t5 and saved version (s5),
   # rounded to three significant figures:
-  print("Replication of Yoon et al. (2007) Table 5 values (first 4 rows) for VC",quote=FALSE)
-  print("and % differences between previously saved calculations (last 4 rows).",quote=FALSE)
-  s5[,3:8] <- round(100*(s5[,3:8] - t5[,3:8])/(s5[,3:8]+1e-18), 3)
-  t5[,3:8] <- signif(t5[,3:8],3)
-  return(rbind(t5,s5))
-}
-
-# TCE results
-Yoon.table5.TCE <- function(){
-  # Table 5 TCE Results: 
-  # 8-hour inhalation exposure, 5 days per week for 2 month old rats
-  
-  # Load values saved from previous version of this function (used the old MCSim method):
-  s5 <- as.data.frame(readRDS("Data/Yoon.table5.TCE.rds"))
-  
-  # Set up simulation runs
-  t5 <- make_t5(conc <- c(50,600)); idx = 1
-  
-  # Compute dose metrics without extrahepatic metabolism
-  for (ii in conc){ #for each concentration
-    out <- PBPK_run(model.param.filename = "Yoon_template_parameters_Model.xlsx",
-                    model.param.sheetname = "2mo_TCE_noEHM", 
-                    exposure.param.filename = "Yoon_template_parameters_Exposure.xlsx", 
-                    exposure.param.sheetname = "inhal_8hr_5dweek", 
-                    adj.parms = c(Conc_init = ii))
-    t5 <- daily_avg(out, t5, idx)
-    idx = idx + 1
+  print.noquote(paste("Replication of Yoon et al. (2007) Table 5 values (rows 1-4) for",chem))
+  print.noquote("  and % differences between previously saved calculations (rows 5-8).")
+  s5[,3:8] <- abs(round(100*(s5[,3:8] - t5[,3:8])/(s5[,3:8]+1e-18), 3))
+  pt5[,3:8] <- signif((pt5 <- t5)[,3:8],3)
+  res = rbind(pt5,s5)
+  if (test_univ){ # Differences between Template version with/without 'Universal' blood & lung
+    print.noquote("'Universal' blood & lung results for Yoon et al. (2007) Table 5 values (rows 9-12)")
+    print.noquote("  and % differences between 'Universal' and structure-matched results (rows 13-16).")
+    s5[,3:8] <- abs(round(100*(at5[,3:8] - t5[,3:8])/(t5[,3:8]+1e-18), 3))
+    at5[,3:8] <- signif(at5[,3:8],3)
+    res = rbind(res,at5,s5)
   }
-  
-  # Compute dose metrics with extrahepatic metabolism
-  for (ii in conc){ #for each concentration
-    out <- PBPK_run(model.param.filename = "Yoon_template_parameters_Model.xlsx",
-                    model.param.sheetname = "2mo_TCE_EHM", 
-                    exposure.param.filename = "Yoon_template_parameters_Exposure.xlsx", 
-                    exposure.param.sheetname = "inhal_8hr_5dweek", 
-                    adj.parms = c(Conc_init = ii))
-    t5 <- daily_avg(out, t5, idx)
-    idx = idx + 1
-  }
-  # Append table of % differences between current t5 and saved version (s5),
-  # rounded to three significant figuress:
-  print("Replication of Yoon et al. (2007) Table 5 values (first 4 rows) for TCE",quote=FALSE)
-  print("and % differences between previously saved calculations (last 4 rows).",quote=FALSE)
-  s5[,3:8] <- round(100*(s5[,3:8] - t5[,3:8])/(s5[,3:8]+1e-18), 3)
-  t5[,3:8] <- signif(t5[,3:8],3)
-  return(rbind(t5,s5))
-}
-
-# CCl4 results
-Yoon.table5.CCl4 <- function(){
-  # Table 5 CCl4 Results: 
-  # 6-hour inhalation exposure, 5 days per week for 2 month old rats
-  
-  # Load values saved from previous version of this function (used the old MCSim method):
-  s5 <- as.data.frame(readRDS("Data/Yoon.table5.CCl4.rds"))
-  
-  # Set up simulation runs
-  t5 <- make_t5(conc <- c(5,400)); idx = 1
-  
-  # Compute dose metrics without extrahepatic metabolism
-  for (ii in conc){ #for each concentration
-    out <- PBPK_run(model.param.filename = "Yoon_template_parameters_Model.xlsx",
-                    model.param.sheetname = "2mo_CCl4_noEHM", 
-                    exposure.param.filename = "Yoon_template_parameters_Exposure.xlsx", 
-                    exposure.param.sheetname = "inhal_6hr_5dweek", 
-                    adj.parms = c(Conc_init = ii))
-    t5 <- daily_avg(out, t5, idx)
-    idx = idx + 1
-  }
-  
-  # Compute dose metrics with extrahepatic metabolism
-  for (ii in conc){ #for each concentration
-    out <- PBPK_run(model.param.filename = "Yoon_template_parameters_Model.xlsx",
-                    model.param.sheetname = "2mo_CCl4_EHM", 
-                    exposure.param.filename = "Yoon_template_parameters_Exposure.xlsx", 
-                    exposure.param.sheetname = "inhal_6hr_5dweek", 
-                    adj.parms = c(Conc_init = ii))
-    t5 <- daily_avg(out, t5, idx)
-    idx = idx + 1
-  }
-  # Append table of % differences between current t5 and saved version (s5),
-  # rounded to three significant figuress:
-  print("Replication of Yoon et al. (2007) Table 5 values (first 4 rows) for CCl4",quote=FALSE)
-  print("and % differences between previously saved calculations (last 4 rows).",quote=FALSE)
-  s5[,3:8] <- round(100*(s5[,3:8] - t5[,3:8])/(s5[,3:8]+1e-18), 3)
-  t5[,3:8] <- signif(t5[,3:8],3)
-  return(rbind(t5,s5))
-  
+  return(res)
 }
