@@ -81,18 +81,18 @@ univ_blood <- function(parms, species="human"){
       if (V_blc==1) V_blc=V_blc_def[[species]] # If template default value, V_blc ==> species default
       parms["V_venc"] <- 0.75*V_blc # Assumes these are 75%/25% of total (Brown et al., 1997).
       parms["V_artc"] <- 0.25*V_blc
-      if (Q_rbc & V_rbc>V_blc) V_rbc = V_rbc - V_blc # Subtract blood volume from rest of body
+      if (Q_rbc & V_rbc>(V_blc/P_rb)) V_rbc = V_rbc - (V_blc/P_rb) # Subtract blood volume from rest of body
     } else {
       # At least one of V_venc & V_artc is *not* default. Continue to assume
       # 75%/25% = 3/1 ratio of V_venc to V_artc so if either V_xc still = 1, 
       # it can be set using this assumption and the volume of the other.
       if (V_venc==1) { # V_venc is Template default
         parms["V_venc"] <- 3*V_artc
-        if (Q_rbc & V_rbc>parms["V_venc"]) V_rbc <- V_rbc - parms["V_venc"]
+        if (Q_rbc & V_rbc>parms["V_venc"]) V_rbc <- V_rbc - parms["V_venc"]/P_rb
       } 
       if (V_artc==1) { # V_artc is Template default
         parms["V_artc"] <- V_venc/3
-        if (Q_rbc & V_rbc>parms["V_artc"]) V_rbc <- V_rbc - parms["V_artc"]
+        if (Q_rbc & V_rbc>parms["V_artc"]) V_rbc <- V_rbc - parms["V_artc"]/P_rb
       }
     }
     parms["V_blc"] <- 1 
@@ -114,7 +114,7 @@ univ_blood <- function(parms, species="human"){
 PBPK_run <- function(model=template, load=TRUE, reportendog=FALSE, 
                      model.param.filename=NULL, model.param.sheetname=NULL, 
                      exposure.param.filename=NULL, exposure.param.sheetname=NULL, 
-                     data.times=NULL, adj.parms=NULL, BW.table=NULL,
+                     data.times=NULL, adj.parms=NULL, BW.table=NULL, diag=FALSE,
                      Freef.table=NULL, water.dose.frac=NULL, cust_expo=NULL,
                      test_univ=FALSE, rtol=1e-8, atol=1e-8, method="lsoda"){
   # This function runs a simulation using the compiled MCSim model ("model")
@@ -127,6 +127,10 @@ PBPK_run <- function(model=template, load=TRUE, reportendog=FALSE,
   # adj.parms is a list of 'par_name = value's that replace those in the spreadsheets.
   # BW.table is a list with two elements: a vector of BWs called BW and a vector
   #     of corresponding times in h called times
+  # diag is a logical that allows messages from load.model.parameters() and 
+  #     load.exposure.parameters() if TRUE. 'New names' messages may occur when
+  #     data-frames are created but do not indicate any error and otherwise
+  #     clutter the screen.
   # Freef.table is a list with two elements: a vector of values for the free 
   #     fraction of chemical in plasma called Freef and a vector of corresponding
   #     times in h called times
@@ -149,19 +153,30 @@ PBPK_run <- function(model=template, load=TRUE, reportendog=FALSE,
   if (load) model$loadModel()
   model$updateParms() # Reset all parameters to default values in the .model file.
   # Adjust default parameters by importing from given excel file
-  mparms <- load.model.parameters(filename=model.param.filename,
-                                  sheetname=model.param.sheetname, parms=model$parms)
+  if (diag){
+    mparms <- load.model.parameters(filename=model.param.filename,
+                         sheetname=model.param.sheetname, parms=model$parms)
+    eparms <- load.exposure.parameters(filename=exposure.param.filename,
+                        sheetname=exposure.param.sheetname, mparms$parms)
+  } else {
+    mparms <- suppressMessages(load.model.parameters(filename=model.param.filename,
+                                  sheetname=model.param.sheetname, parms=model$parms))
+    eparms <- suppressMessages(load.exposure.parameters(filename=exposure.param.filename,
+                                  sheetname=exposure.param.sheetname, mparms$parms))
+  }
+  
   parms <- mparms$parms
   chem <- mparms$chem
   species <- mparms$species
   sex <- mparms$sex
   Y0=c()
-  eparms <- load.exposure.parameters(filename=exposure.param.filename, 
-                                      sheetname=exposure.param.sheetname, parms)
+  
   parms <- eparms$parms
   eoparms <- eparms$other_parms
   exp_parms <- eoparms$exp.parms
   
+  if (test_univ) parms <- univ_blood(parms, species)
+ 
   if(!is.null(adj.parms)){ # Adjust any parameters set with new values in adj.parms:
       n <- names(adj.parms)
       neo <- n%in%names(eoparms) # Look for ones in eoparms
@@ -175,8 +190,6 @@ PBPK_run <- function(model=template, load=TRUE, reportendog=FALSE,
                                          unused parameters:",n[which(!(neo|nex|np))]))
   }
   
-  if (test_univ) parms <- univ_blood(parms, species)
- 
   # Check for incompatible parameters
   # Only one urinary excretion pathway should be used.
   if (parms["k_ustc"]*parms["k_ven_ustc"] != 0){
