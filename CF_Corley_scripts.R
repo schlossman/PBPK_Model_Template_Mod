@@ -26,6 +26,7 @@ Corley.chamber.plot <- function(maketiff=FALSE, test_univ = FALSE){
   # Set input maketiff=TRUE to create tiff file.
   
   vcol=c("#440154FF", "#2A788EFF", "#7AD151FF") 
+  vcol=c("red", "#2A788EFF", "#7AD151FF") 
   vcol5=c("#440154FF", "#414487FF", "#2A788EFF", "#22A884FF", "#7AD151FF") 
   vcol7=c("#440154FF", "#472F7DFF", "#39568CFF", "#2A788EFF", "#1F988BFF", 
             "#35B779FF", "#7AD151FF") # viridis(7, begin=0.0, end=0.8)
