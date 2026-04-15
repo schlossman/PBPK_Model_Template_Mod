@@ -21,7 +21,7 @@ library(readxl)
 source("run_template_model.R")
 
 # Corley.chamber.plot contains the commands for the plots in the VOC manuscript submission. 
-Corley.chamber.plot<-function(maketiff=FALSE, test_univ = FALSE){
+Corley.chamber.plot <- function(maketiff=FALSE, test_univ = FALSE){
   # Creates manuscript Figure 10 (mice) and Figure S-7 (rats)
   # Set input maketiff=TRUE to create tiff file.
   
