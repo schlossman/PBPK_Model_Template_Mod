@@ -81,18 +81,20 @@ univ_blood <- function(parms, species="human"){
       if (V_blc==1) V_blc=V_blc_def[[species]] # If template default value, V_blc ==> species default
       parms["V_venc"] <- 0.75*V_blc # Assumes these are 75%/25% of total (Brown et al., 1997).
       parms["V_artc"] <- 0.25*V_blc
-      if (Q_rbc & V_rbc>(V_blc/P_rb)) V_rbc = V_rbc - (V_blc/P_rb) # Subtract blood volume from rest of body
+      if (Q_rbc & V_rbc>V_blc*F_free/P_rb) V_rbc = V_rbc - V_blc*F_free/P_rb 
+          # If rest-of-body (rb) is active and has greater volume, subtract the
+          # effective blood volume of distribution from rest of body
     } else {
       # At least one of V_venc & V_artc is *not* default. Continue to assume
       # 75%/25% = 3/1 ratio of V_venc to V_artc so if either V_xc still = 1, 
       # it can be set using this assumption and the volume of the other.
       if (V_venc==1) { # V_venc is Template default
-        parms["V_venc"] <- 3*V_artc
-        if (Q_rbc & V_rbc>parms["V_venc"]) V_rbc <- V_rbc - parms["V_venc"]/P_rb
+        parms["V_venc"] <- V_venc <- 3*V_artc
+        if (Q_rbc & V_rbc>V_venc*F_free/P_rb) V_rbc <- V_rbc - V_venc*F_free/P_rb
       } 
       if (V_artc==1) { # V_artc is Template default
-        parms["V_artc"] <- V_venc/3
-        if (Q_rbc & V_rbc>parms["V_artc"]) V_rbc <- V_rbc - parms["V_artc"]/P_rb
+        parms["V_artc"] <- V_artc <- V_venc/3
+        if (Q_rbc & V_rbc>V_artc*F_free/P_rb) V_rbc <- V_rbc - V_artc*F_free/P_rb
       }
     }
     parms["V_blc"] <- 1 
@@ -641,7 +643,7 @@ load.exposure.parameters <- function(filename, sheetname = NULL, parms){
 perc.diff <- function(model, data, sc=NULL){
   # Compute absolute percent differences between model and data values relative
   # to a scale, sc, which may be a scalar or the length of the data vector.
-  # If no sc is given (default = NULL), then 
+  # If no sc is given (default = NULL), then:
   # sc = data + (smallest nonzero data value)/1e6 (to avoid divide-by-zero). 
   if (is.null(sc)) sc = data + min(abs(data[data!=0]))/1e6
   return(100*(abs(data-model)/sc))
