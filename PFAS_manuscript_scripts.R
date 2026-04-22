@@ -48,7 +48,7 @@ PFHxS.Kim.FemaleRat <- function(img.name = NULL, alts = NULL, test_univ=FALSE){
   
   plot.Kim(out, out.inc=out2, chem="PFHxS", sex="female", dose=4.0, img.name=img.name, 
            Pylims=list(plasma=c(0.1,1e5),liver=c(15,30000),kidney=c(1e-4,2e4),urine=c(0,440)),
-           second_sim_legend=legend)
+           second_sim_legend=legend, test_univ=test_univ)
   
   print.noquote(paste("Maximum mass balance error (Template version with Corrected Flow):",
               max(abs(out$A_bal))))
@@ -101,7 +101,7 @@ PFHxS.Kim.MaleRat <- function(img.name = NULL, test_univ=FALSE){
   
   plot.Kim(out, out.inc=out2, chem="PFHxS", sex="male", dose=10.0, img.name=img.name, 
            Pylims=list(plasma=c(5e3,6e4),liver=c(1000,50000),kidney=c(100,5e3),urine=c(0,520)),
-           second_sim_legend=legend)
+           second_sim_legend=legend, test_univ=test_univ)
   
   print.noquote(paste("Maximum mass balance error (Template version with Corrected Flow):",
               max(abs(out$A_bal))))
@@ -153,7 +153,7 @@ PFNA.Kim.FemaleRat <- function(img.name = NULL, test_univ=FALSE){
   
   plot.Kim(out, out.inc=out2, chem="PFNA", sex="female", dose=3.0, img.name=img.name, 
            Pylims=list(plasma=c(1e-4,3e1),liver=c(1e-4,20),kidney=c(1e-6,6),urine=c(0,400)),
-           second_sim_legend=legend)
+           second_sim_legend=legend, test_univ=test_univ)
   
   print.noquote(paste("Maximum mass balance error (Template version with Corrected Flow):",
               max(abs(out$A_bal))))
@@ -205,7 +205,7 @@ PFNA.Kim.MaleRat <- function(img.name = NULL, test_univ=FALSE){
   }
   
   plot.Kim(out, out.inc=out2, chem="PFNA", sex="male", dose=3, img.name=img.name,
-           second_sim_legend=legend)
+           second_sim_legend=legend, test_univ=test_univ)
 
   print.noquote(paste("Maximum mass balance error (Template version with Corrected Flow):",
               max(abs(out$A_bal))))
@@ -256,7 +256,7 @@ PFDA.Kim.FemaleRat <- function(img.name = NULL, test_univ=FALSE){
   }
   
    plot.Kim(out, out.inc=out2, chem="PFDA", sex="female", dose=1.0, img.name=img.name,
-            second_sim_legend=legend)
+            second_sim_legend=legend, test_univ=test_univ)
   
   print.noquote(paste("Maximum mass balance error (Template version with Corrected Flow):",
               max(abs(out$A_bal))))
@@ -310,6 +310,14 @@ PFOA.Loccisano.KudoLow <- function(img.name=NULL, test_univ=FALSE){
   print.noquote(paste("Maximum mass balance error:", max(abs(out$A_bal))))
   
   #Accuracy calculation
+  if (test_univ){
+    print.noquote(paste("Maximum absolute percent difference (3 sig figs), blood, *after first time-point*:",
+                        max.diff(out2$C_ven[-1], out$C_bl[-1])))
+    print.noquote(paste("Maximum percent relative difference (3 sig figs), liver:",
+                        max.diff(out2$C_li, out$C_li)))
+    print.noquote(paste("Maximum percent relative difference (3 sig figs), urine:",
+                        max.diff(out2$A_urine, out$A_urine)))
+  } else {
   Pdata <- read.csv("Data/Digitized_Data_PFOA/Data_Fig8_Kudo_lowPlasma.csv", 
                     header=TRUE, sep = ",")
   times = Pdata[,3]
@@ -325,6 +333,7 @@ PFOA.Loccisano.KudoLow <- function(img.name=NULL, test_univ=FALSE){
   perc.scale <- perc.diff(out$C_bl, Pdata[,4], sc=1.4)
   points(times, perc.scale, col="red")
   #within 2.8%
+  }
 }
 
 PFOA.Loccisano.KudoHigh <- function(img.name = NULL, test_univ=FALSE){
@@ -355,7 +364,15 @@ PFOA.Loccisano.KudoHigh <- function(img.name = NULL, test_univ=FALSE){
   print.noquote(paste("Maximum mass balance error:", max(abs(out$A_bal))))
   
   #Accuracy calculation
-  Pdata <- read.csv("Data/Digitized_Data_PFOA/Data_Fig8_Kudo_highPlasma.csv", 
+  if (test_univ){
+    print.noquote(paste("Maximum absolute percent difference (3 sig figs), blood, *after first time-point*:",
+                        max.diff(out2$C_ven[-1], out$C_bl[-1])))
+    print.noquote(paste("Maximum percent relative difference (3 sig figs), liver:",
+                        max.diff(out2$C_li, out$C_li)))
+    print.noquote(paste("Maximum percent relative difference (3 sig figs), urine:",
+                        max.diff(out2$A_urine, out$A_urine)))
+  } else {
+    Pdata <- read.csv("Data/Digitized_Data_PFOA/Data_Fig8_Kudo_highPlasma.csv", 
                     header=TRUE, sep=",")
   nna = !is.na(Pdata[,3])
   times = Pdata[nna,3]
@@ -371,10 +388,11 @@ PFOA.Loccisano.KudoHigh <- function(img.name = NULL, test_univ=FALSE){
   perc.scale <- perc.diff(out.inc$C_bl, Pdata[nna,4], sc=600)
   points(out.inc$time, perc.scale, col="red")
   #within 2.7%
+  }
 }
 
 PFOA.Loccisano.Kemper <- function(img.name = NULL, match_orig=FALSE, 
-                                  univ_blood=FALSE){
+                                  test_univ=FALSE){
   # Figure 10: Loccisano 2012, Male rat, 25 mg/kg PFOA
   #
   # The original PBPK Model Template code set the initial condition (IC) for
@@ -422,7 +440,15 @@ PFOA.Loccisano.Kemper <- function(img.name = NULL, match_orig=FALSE,
   print.noquote(paste("Maximum mass balance error:", max(abs(out$A_bal))))
 
   #Accuracy calculation
-  Pdata <- read.csv("Data/Digitized_Data_PFOA/Data_Fig9_Kemper_OraldosePlasma.csv", 
+  if (test_univ){
+    print.noquote(paste("Maximum absolute percent difference (3 sig figs), blood:",
+                        max.diff(out2$C_ven, out$C_bl)))
+    print.noquote(paste("Maximum percent relative difference (3 sig figs), feces:",
+                        max.diff(out2$A_fecal, out$A_fecal)))
+    print.noquote(paste("Maximum percent relative difference (3 sig figs), urine:",
+                        max.diff(out2$A_urine, out$A_urine)))
+  } else {
+    Pdata <- read.csv("Data/Digitized_Data_PFOA/Data_Fig9_Kemper_OraldosePlasma.csv", 
                     header=TRUE, sep=",")
   out.inc <- PBPK_run(model.param.filename = "PFOA_template_parameters_Model.xlsx", 
                       model.param.sheetname = "MaleRat", 
@@ -436,6 +462,7 @@ PFOA.Loccisano.Kemper <- function(img.name = NULL, match_orig=FALSE,
   perc.scale <- perc.diff(out.inc$C_bl, Pdata[,2], sc=200)
   points(out.inc$time, perc.scale, col = "red")
   #within 17% near peak, 3% after 70 hours
+  }
 }
 
 PFOS.Loccisano.3M <- function(img.name = NULL, test_univ = FALSE){
@@ -480,6 +507,12 @@ PFOS.Loccisano.3M <- function(img.name = NULL, test_univ = FALSE){
   print.noquote(paste("Maximum mass balance error:", max(abs(out$A_bal))))
   
   #Accuracy calculation
+  if (test_univ){
+    print.noquote(paste("Maximum absolute percent difference (3 sig figs), blood:",
+                        max.diff(out2$C_ven, out$C_bl)))
+    print.noquote(paste("Maximum percent relative difference (3 sig figs), liver:",
+                        max.diff(out2$C_li, out$C_li)))
+  } else {
   Pdata <- read.csv("Data/Digitized_Data_PFOS/Fig4_3M_OralPlasma.csv", header=TRUE, sep=",")
   Ptimes = Pdata[,1]*24
   out.data <- PBPK_run(model.param.filename = "PFOS_template_parameters_Model.xlsx", 
@@ -495,4 +528,5 @@ PFOS.Loccisano.3M <- function(img.name = NULL, test_univ = FALSE){
   perc <- perc.diff(out.data$C_bl, Pdata[,2], sc=60)
   points(Ptimes[-(1:2)], perc[-(1:2)], col = "red")
   #within 17%
+  }
 }
