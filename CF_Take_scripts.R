@@ -32,17 +32,12 @@ take.tiss <- function(out){
                     fat_conc=out$C_tc3*0.9))
 }
 
-one.comp.plot <- function(temp,tissname,data,alt,ylim=c(0.005,100),test=FALSE){
+one.comp.plot <- function(temp, tissname, data, alt, ylim=c(0.005,100),
+                          col2=pub.col, lin2=pub.lty){
   # Function to plot results of PBPK Mode Template (temp) vs. corresponding Take
   # et al. data (data) and acslX results (acslx) for tissue named tissname. 
   # temp and acslx = c(time vector, tissue concentration vector)
   # data = c(times, min values, mean values, max values)
-  col2=pub.col
-  lin2=pub.lty
-  if (test) {
-    col2="red"
-    lin2="dotted"
-  }
   plot(temp[,1], temp[,2], type="l", lwd=4, lty=templ.lty, cex=0.2,
        col=templ.col,  log="y", cex.main = 0.8, xlab="Time (min)", 
        ylab=paste0("[",tissname,"] (mg/L)"),
@@ -63,28 +58,22 @@ Take.comp.plot <- function(out, range, take_data, alt, ylimf=c(0.005, 100.0),
   # corresponding Take et al. data (take_data) and alt results (acslx or other).
   # range = row range of out to plot.
   out <- take.tiss(out[range,]) # Time range to be plotted
-  altmod="Sasso et al. (2013) Model"
-  col2=pub.col
-  lin2=pub.lty
-  if (test) {
-    altmod="'Universal' blood & lung"
-    col2="red"
-    lin2="dotted"
-  }
+  altmod="Sasso et al. (2013) Model"; col2=pub.col; lin2=pub.lty
+  if (test) { altmod="'Universal' blood & lung"; col2="red"; lin2="dotted" }
   
   par(mfrow=c(2,2), mar=c(4,4.5,0,0), oma=c(3.2,0,1,2), mgp=c(2.3,0.6,0))
   one.comp.plot(temp=cbind(out$time,out$blood_conc), tissname="Blood",
                 data=take_data[,c("time","blood_min","blood_data","blood_max")],
-                alt=cbind(alt$time,alt$blood_conc),test=test) 
+                alt=cbind(alt$time,alt$blood_conc), col2=col2, lin2=lin2) 
   one.comp.plot(temp=cbind(out$time,out$fat_conc), tissname="Fat",
                 data=take_data[,c("time","fat_min","fat_data","fat_max")],
-                alt=cbind(alt$time,alt$fat_conc), ylim=ylimf,test=test) 
+                alt=cbind(alt$time,alt$fat_conc), ylim=ylimf, col2=col2, lin2=lin2) 
   one.comp.plot(temp=cbind(out$time,out$kidney_conc), tissname="Kidney",
                 data=take_data[,c("time","kidney_min","kidney_data","kidney_max")],
-                alt=cbind(alt$time,alt$kidney_conc),test=test) 
+                alt=cbind(alt$time,alt$kidney_conc), col2=col2, lin2=lin2) 
   one.comp.plot(temp=cbind(out$time,out$liver_conc), tissname="Liver",
                 data=take_data[,c("time","liver_min","liver_data","liver_max")],
-                alt=cbind(alt$time,alt$liver_conc),test=test) 
+                alt=cbind(alt$time,alt$liver_conc), col2=col2, lin2=lin2) 
   par(mfrow = c(1,1), oma = c(0, 0, 0, 0), mar = c(0, 0, 0, 0), new = TRUE)
   plot(0, 0, type = "n", bty = "n", xaxt = "n", yaxt = "n")
   legend("bottomleft", c("Median Data", "Min/Max Data"), xpd = TRUE, 
@@ -115,7 +104,7 @@ chloroform.Take.oral <- function(test_univ=FALSE){
   }
   Take.comp.plot(out, range=5:5500, take_data, alt=take_acslx, test=test_univ)
   print.noquote("The following values are calculated from the oral route models.")
-  res.diff.calc(out,alt=take_acslx,test=test_univ)
+  res.diff.calc(out, alt=take_acslx, test=test_univ)
 }
 
 plot.CF.Take.oral <- function(){
@@ -144,7 +133,7 @@ chloroform.Take.inhalation <- function(test_univ=FALSE){
   }
   Take.comp.plot(out, range=5:4810, take_data, alt=take_acslx, test=test_univ)
   print.noquote("The following values are calculated from the inhalation route models.")
-  res.diff.calc(out,alt=take_acslx,test=test_univ)
+  res.diff.calc(out, alt=take_acslx, test=test_univ)
 }
 
 plot.CF.Take.inh <- function(test_univ = FALSE){
@@ -175,7 +164,7 @@ chloroform.Take.oral.and.inh <- function(test_univ = FALSE){
   Take.comp.plot(out, range=7:6000, take_data, alt=take_acslx, ylimf=c(0.005, 150.0),
                  test=test_univ)
   print.noquote("The following values are calculated from the combined oral and inhalation route models.")
-  res.diff.calc(out,alt=take_acslx,test=test_univ)
+  res.diff.calc(out, alt=take_acslx, test=test_univ)
 }
 
 plot.CF.Take.oral.inh <- function(test_univ = FALSE){
@@ -184,7 +173,7 @@ plot.CF.Take.oral.inh <- function(test_univ = FALSE){
   dev.off()  
 }
 
-res.diff.calc <- function(out,alt,test=FALSE){
+res.diff.calc <- function(out, alt, test=FALSE){
   # Calculate differences between PBPK Model Template ('out') and acslx results
   # for venous blood, fat, kidney and liver predictions.
   out <- take.tiss(out)
