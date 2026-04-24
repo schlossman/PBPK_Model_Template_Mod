@@ -33,9 +33,7 @@ PFHxS.Kim.FemaleRat <- function(img.name = NULL, alts = NULL, test_univ=FALSE){
                   exposure.param.filename = "PFHxS_template_parameters_Exposure.xlsx", 
                   exposure.param.sheetname = "FKimRecreateBW")
   
-  if (!test_univ) { 
-    out2 = NULL 
-    legend = NULL
+  if (!test_univ) { out2 <- legend <- NULL
     #out2 <- PBPK_run(param.filename="PFAS_template_parameters_PFHxS.xlsx", 
     #                 sheetname="FKimRecreateBW", mName="PFAS_template_GI")
     } else {
@@ -84,10 +82,8 @@ PFHxS.Kim.MaleRat <- function(img.name = NULL, test_univ=FALSE){
                   model.param.sheetname = "MKimRecreateBW", 
                   exposure.param.filename = "PFHxS_template_parameters_Exposure.xlsx", 
                   exposure.param.sheetname = "MKimRecreateBW",
-                  data.times = c(seq(0,1,0.01),seq(1.1,14*24,0.1)))
-  if (!test_univ) { 
-    out2 = NULL 
-    legend = NULL
+                  data.times = c(seq(0,1,0.1),seq(1.5,14*24,0.5)))
+  if (!test_univ) { out2 <- legend <- NULL
     #out2 <- PBPK_run(param.filename="PFAS_template_parameters_PFHxS.xlsx", 
     #                 sheetname="MKimRecreateBW", mName="PFAS_template_GI")
   } else {
@@ -95,7 +91,7 @@ PFHxS.Kim.MaleRat <- function(img.name = NULL, test_univ=FALSE){
                      model.param.sheetname = "MKimRecreateBW", 
                      exposure.param.filename = "PFHxS_template_parameters_Exposure.xlsx", 
                      exposure.param.sheetname = "MKimRecreateBW", test_univ=TRUE,
-                     data.times = c(seq(0,1,0.01),seq(1.1,14*24,0.1)))
+                     data.times = c(seq(0,1,0.1),seq(1.5,14*24,0.5)))
     legend="'Universal' Blood and Lung Simulation"
   }
   
@@ -136,10 +132,8 @@ PFNA.Kim.FemaleRat <- function(img.name = NULL, test_univ=FALSE){
                   model.param.sheetname = "FKimRecreateBW", 
                   exposure.param.filename = "PFNA_template_parameters_Exposure.xlsx", 
                   exposure.param.sheetname = "FKimRecreateBW", 
-                  data.times=c(seq(0,1,0.01),seq(1.2,60*24,0.2)))
-  if (!test_univ) { 
-    out2 = NULL 
-    legend = NULL
+                  data.times=c(seq(0,1,0.1),seq(1.5,60*24,0.5)))
+  if (!test_univ) { out2 <- legend <- NULL
     #out2 <- PBPK_run(param.filename="PFAS_template_parameters_PFNA.xlsx", 
     #                 sheetname="FKimRecreateBW", mName="PFAS_template_GI")
   } else {
@@ -147,7 +141,7 @@ PFNA.Kim.FemaleRat <- function(img.name = NULL, test_univ=FALSE){
                      model.param.sheetname = "FKimRecreateBW", 
                      exposure.param.filename = "PFNA_template_parameters_Exposure.xlsx", 
                      exposure.param.sheetname = "FKimRecreateBW", test_univ=TRUE, 
-                     data.times=c(seq(0,1,0.01),seq(1.2,60*24,0.2)))
+                     data.times=c(seq(0,1,0.1),seq(1.5,60*24,0.5)))
     legend="'Universal' Blood and Lung Simulation"
   }
   
@@ -188,11 +182,9 @@ PFNA.Kim.MaleRat <- function(img.name = NULL, test_univ=FALSE){
                   model.param.sheetname = "MKimRecreateBW", 
                   exposure.param.filename = "PFNA_template_parameters_Exposure.xlsx", 
                   exposure.param.sheetname = "MKimRecreateBW", 
-                  data.times=c(seq(0,1,0.01),seq(1.2,60*24,0.2)))
+                  data.times=c(seq(0,1,0.1),seq(1.5,60*24,0.5)))
 
-  if (!test_univ) { 
-    out2 = NULL 
-    legend = NULL
+  if (!test_univ) { out2 <- legend <- NULL
     #out2 <- PBPK_run(param.filename="PFAS_template_parameters_PFNA.xlsx", 
     #                 sheetname="MKimRecreateBW", mName="PFAS_template_GI")
   } else {
@@ -200,7 +192,7 @@ PFNA.Kim.MaleRat <- function(img.name = NULL, test_univ=FALSE){
                      model.param.sheetname = "MKimRecreateBW", 
                      exposure.param.filename = "PFNA_template_parameters_Exposure.xlsx", 
                      exposure.param.sheetname = "MKimRecreateBW", test_univ=TRUE,
-                     data.times = c(seq(0,1,0.01),seq(1.2,60*24,0.2)))
+                     data.times = c(seq(0,1,0.1),seq(1.5,60*24,0.5)))
     legend="'Universal' Blood and Lung Simulation"
   }
   
@@ -240,10 +232,8 @@ PFDA.Kim.FemaleRat <- function(img.name = NULL, test_univ=FALSE){
                   model.param.sheetname = "FKimRecreateBW", 
                   exposure.param.filename = "PFDA_template_parameters_Exposure.xlsx", 
                   exposure.param.sheetname = "FKimRecreateBW", 
-                  data.times=c(seq(0,15,0.01),16:(150*24)))
-  if (!test_univ) { 
-    out2 = NULL 
-    legend = NULL
+                  data.times=c(seq(0,15,0.1),16:(150*24)))
+  if (!test_univ) { out2 <- legend <- NULL
     #out2 <- PBPK_run(param.filename="PFAS_template_parameters_PFDA.xlsx", 
     #                 sheetname="FKimRecreateBW", mName="PFAS_template_GI")
   } else {
@@ -251,7 +241,7 @@ PFDA.Kim.FemaleRat <- function(img.name = NULL, test_univ=FALSE){
                      model.param.sheetname = "FKimRecreateBW", 
                      exposure.param.filename = "PFDA_template_parameters_Exposure.xlsx", 
                      exposure.param.sheetname = "FKimRecreateBW", test_univ=TRUE, 
-                     data.times=c(seq(0,15,0.01),16:(150*24)))
+                     data.times=c(seq(0,15,0.1),16:(150*24)))
     legend="'Universal' Blood and Lung Simulation"
   }
   
@@ -291,9 +281,7 @@ PFOA.Loccisano.KudoLow <- function(img.name=NULL, test_univ=FALSE){
                   exposure.param.filename = "PFOA_template_parameters_Exposure.xlsx", 
                   exposure.param.sheetname = "MKudo1BW",
                   data.times = 0:300/100)
-  if (!test_univ) { 
-    out2 = NULL 
-    legend = NULL
+  if (!test_univ) { out2 <- legend <- NULL
     #out2 <- PBPK_run(param.filename="PFAS_template_parameters_PFDA.xlsx", 
     #                 sheetname="FKimRecreateBW", mName="PFAS_template_GI")
   } else {
@@ -345,9 +333,7 @@ PFOA.Loccisano.KudoHigh <- function(img.name = NULL, test_univ=FALSE){
                   exposure.param.sheetname = "MKudo2BW",
                   data.times = 0:300/100)
   
-  if (!test_univ) { 
-    out2 = NULL 
-    legend = NULL 
+  if (!test_univ) { out2 <- legend <- NULL
     #out2 <- PBPK_run(param.filename="PFAS_template_parameters_PFDA.xlsx", 
     #                 sheetname="FKimRecreateBW", mName="PFAS_template_GI")
   } else {
@@ -421,9 +407,7 @@ PFOA.Loccisano.Kemper <- function(img.name = NULL, match_orig=FALSE,
                   exposure.param.sheetname = "MKemperOral25BW", 
                   BW.table = BW.table, adj.parms=adj.parms)
   
-  if (!test_univ) { 
-    out2 <- NULL 
-    legend = NULL
+  if (!test_univ) { out2 <- legend <- NULL
     #out2 <- PBPK_run(param.filename="PFAS_template_parameters_PFDA.xlsx", 
     #                 sheetname="FKimRecreateBW", mName="PFAS_template_GI")
   } else {
