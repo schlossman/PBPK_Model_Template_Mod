@@ -19,8 +19,6 @@ source("run_template_model.R")
 vcol3 = c("#440154FF", "#2A788EFF", "#7AD151FF") # viridis(3, begin = 0.0, end = 0.8)
 vcol5 = c("#440154FF", "#414487FF", "#2A788EFF", "#22A884FF", "#7AD151FF") # viridis(5, begin = 0.0, end = 0.8)
 
-
-
 styrene.fig2 <- function(img.name = NULL, test_univ=FALSE){
   # Recreate Figure 2 from Ramsey and Andersen (1984): 6-h rat inhalation exposure
   if (!is.null(img.name)) tiff(img.name, res=300, height=6, width=7, units="in")
@@ -28,13 +26,16 @@ styrene.fig2 <- function(img.name = NULL, test_univ=FALSE){
   pub.col <- vcol3[2]; pub.col5.1 <- vcol5[1]; pub.col5.2 <- vcol5[2]
   templ.col <- vcol3[3]; templ.col5.1 <- vcol5[4]; templ.col5.2 <- vcol5[5]
   pub.lty <- "dashed"; templ.lty <- "solid"; compmodel = "Published Model"
-  if (test_univ){
-    compmodel = "'Universal' blood & lung"
+  if (test_univ){ compmodel = "'Universal' blood & lung"
     pub.col5.1 <- pub.col5.2 <- "red"
   }
- 
-  print("Percent differences are calculated relative to the maximum blood concentration.",
-        quote=FALSE)
+  
+  if (test_univ){
+    print.noquote("Maximum % relative blood concentration differences *after the first time-point*")
+  } else {
+    print.noquote("Percent differences are calculated relative to the maximum blood concentration.")
+  }
+  
   for (ii in c(80,200,600,1200)){ #for each concentration
     # Load Data, then get time/blood conc subsets that are not NA
     data = read.csv(file =paste0("Data/Data_Styrene/fig2_",ii,"ppm.csv"), header = TRUE)
@@ -51,8 +52,7 @@ styrene.fig2 <- function(img.name = NULL, test_univ=FALSE){
                     exposure.param.filename = "Styrene_template_parameters_Exposure.xlsx", 
                     exposure.param.sheetname = "inhalation_Fig2", 
                     adj.parms = c(Conc_init = ii), data.times = times)
-    if (test_univ){
-      tb <- tf <- times
+    if (test_univ){  tb <- tf <- times
       alt = PBPK_run(model.param.filename = "Styrene_template_parameters_Model.xlsx",
                     model.param.sheetname = "rat", 
                     exposure.param.filename = "Styrene_template_parameters_Exposure.xlsx", 
@@ -61,9 +61,15 @@ styrene.fig2 <- function(img.name = NULL, test_univ=FALSE){
       cb = alt$C_art; cf = alt$C_tc1 # tc1 = fat
     }
     
-    # Calculate error - percent difference between template and at or published sims
-    print.noquote(paste("Max. percent difference for",ii,"ppm:",
+    # Calculate error - percent difference between template and alt or published sims
+    if (test_univ){
+      print.noquote(paste("Max. % relative difference for",ii,"ppm:",
+                          max.diff(out$C_art[-1], cb[-1]) ))
+    } else {
+      print.noquote(paste("Max. difference for",ii,"ppm, relative to Cmax:",
                   max.diff.scale(out$C_art[match(tb,times)], cb, sc=max(cb)) ))
+    }
+    
     
     plot(tbd, cbd, pch=19, col=pub.col, ylab="Concentration (mg/L)", log="y", 
          xlim=c(0,24), xaxp=c(0,24,6), xlab="Time (hr)", 
@@ -112,9 +118,13 @@ styrene.fig3 <- function(img.name = NULL, test_univ=FALSE){
   }
   
   # Calculate error - percent difference between template and published sims
-  print("Percent differences are calculated relative to the blood Cmax.",
-        quote=FALSE)
-  err = perc.diff(out$C_ven[-1], dfig3$conc_sim, sc=max(out$C_ven))
+  if (test_univ){
+    print.noquote("Maximum % relative blood concentration differences *after the first time-point*")
+    err = perc.diff(out$C_ven[-1], dfig3$conc_sim)
+  } else {
+    print.noquote("Percent differences are calculated relative to the maximum blood concentration.")
+    err = perc.diff(out$C_ven[-1], dfig3$conc_sim, sc=max(out$C_ven))
+  }
   print.noquote(paste("Max. % difference:", max(err) ))
   print.noquote(paste("Max. % difference after 3 mnin:", max(err[dfig3$time_conc_sim > 0.05]) ))
   plot(out$time[-1], err, xlab = "Time (hr)", ylab = "Percent Difference")
